@@ -85,6 +85,15 @@ input,textarea,select{font-family:inherit}
 .t-result.bad{background:#fff3f3;border:2px solid #f5a3a6;text-align:left}
 .ecode{font-size:12px;color:var(--sub)}
 .ver{font-size:12px;color:#aaa}
+.lock{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:24px;text-align:center}
+.lock-box{background:#fff;border-radius:24px;padding:36px 28px;max-width:520px}
+.lock-ico{font-size:70px}
+.lock-box h2{font-family:'Jua';font-weight:400;font-size:30px;margin:8px 0}
+.lock-box p{color:var(--sub);font-size:17px;line-height:1.6}
+.open-panel{display:flex;flex-direction:column;gap:10px;border:3px solid #f5a3a6}
+.open-panel.is-open{border-color:#7fd3a8}
+.open-state{font-family:'Jua';font-size:26px}
+.open-help{font-size:13px;color:var(--sub)}
 .gtopic{background:#fffbe6;border-radius:10px;padding:6px 10px;font-size:14px;font-weight:700;display:flex;gap:6px;align-items:center}
 .gtopic span{flex:1}
 #cfgBank{width:100%;min-height:150px;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font-size:15px;line-height:1.6}
@@ -180,7 +189,7 @@ input,textarea,select{font-family:inherit}
 .mini{font-size:12px;padding:5px 9px;border-radius:9px;background:#eee;font-weight:700}
 
 /* 크게보기 / 모달 */
-.overlay{position:fixed;inset:0;background:rgba(20,24,30,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.overlay{position:fixed;inset:0;background:rgba(20,24,30,.55);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
 .modal{background:#fff;border-radius:22px;padding:22px;width:100%;max-width:380px;text-align:center}
 .modal h3{font-family:'Jua';font-weight:400;font-size:24px;margin-bottom:12px}
 .modal input{width:100%;font-size:24px;text-align:center;padding:12px;border:3px solid var(--line);border-radius:14px;margin-bottom:12px;letter-spacing:6px}
@@ -312,6 +321,20 @@ input,textarea,select{font-family:inherit}
     <span class="conn" id="adminConn">연결 중</span>
   </div>
   <div class="admin-main">
+    <div class="panel open-panel" id="openPanel">
+      <div class="open-state" id="openState">🔒 수업 닫힘</div>
+      <div class="row" style="margin:0">
+        <select id="openDur">
+          <option value="40">40분 동안 열기</option>
+          <option value="45">45분 동안 열기</option>
+          <option value="80">80분 동안 열기 (블록 수업)</option>
+          <option value="0">직접 닫을 때까지 열기</option>
+        </select>
+        <button class="btn" style="background:var(--ok)" onclick="openClass()">🔓 수업 열기</button>
+        <button class="btn red" onclick="closeClass()">🔒 지금 닫기</button>
+      </div>
+      <p class="open-help">수업이 닫혀 있으면 학생은 주소나 QR로 들어와도, 디벗을 껐다 켜도 아무것도 할 수 없어요. 정해진 시간이 지나면 자동으로 닫혀요.</p>
+    </div>
     <div class="panel">
       <h3>⚙️ 수업 설정</h3>
       <div class="row"><label>공지</label><input id="cfgNotice" placeholder="모든 화면 위에 보이는 한 줄 공지 (비우면 숨김)"></div>
@@ -345,6 +368,14 @@ input,textarea,select{font-family:inherit}
 </section>
 
 <!-- 모달들 -->
+<div class="lock hidden" id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-ico" id="lockIco">🔒</div>
+    <h2 id="lockTitle">지금은 모둠회의 시간이 아니에요</h2>
+    <p id="lockMsg">선생님이 수업을 열어 주시면 들어올 수 있어요.</p>
+  </div>
+  <button class="teacher-link" onclick="openAdminLogin()">👩‍🏫 선생님 화면</button>
+</div>
 <div class="overlay hidden" id="qrModal" onclick="if(event.target===this)closeQR()">
   <div class="qr-modal">
     <div class="qr-card" id="qrCard"><h4 id="qrTitle"></h4><p id="qrDesc"></p><div id="qrBox"></div></div>
@@ -2678,7 +2709,7 @@ const DB_URL   = "https://ninja-game-56862-default-rtdb.firebaseio.com"; // Fire
 const ROOT     = "speakchat";   // 데이터베이스 안에서 이 앱이 쓰는 폴더 이름
 const ADMIN_PW = "1852";        // 선생님 화면 비밀번호
 const DEFAULT_GROUPS = 6;
-const APP_VERSION = "11.14-2"; // 파일을 고칠 때마다 이 값을 바꾸면 학생 기기도 새 버전으로 바뀌어요
+const APP_VERSION = "11.14-3"; // 파일을 고칠 때마다 이 값을 바꾸면 학생 기기도 새 버전으로 바뀌어요
 
 /* ================= 공통 도구 ================= */
 const $ = id => document.getElementById(id);
@@ -2689,7 +2720,7 @@ function toast(msg, ms=2600){
   let el=document.querySelector('.toast'); if(!el){el=document.createElement('div');el.className='toast';document.body.appendChild(el);}
   el.textContent=msg; el.style.display='block'; clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.style.display='none',ms);
 }
-function show(id){ ['home','voice','chat','admin','mictest'].forEach(s=>$(s).classList.toggle('hidden', s!==id)); window.scrollTo(0,0); }
+function show(id){ ['home','voice','chat','admin','mictest'].forEach(s=>$(s).classList.toggle('hidden', s!==id)); window.scrollTo(0,0); if(typeof applyLock==='function') applyLock(); }
 function goHome(){ show('home'); }
 const LS = { get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v;}catch(e){return d;}}, set(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
 const clientId = LS.get('sc_cid', null) || (()=>{const id=Math.random().toString(36).slice(2,10); LS.set('sc_cid',id); return id;})();
@@ -2751,7 +2782,7 @@ let config = {topic:'', notice:'', groups:DEFAULT_GROUPS};
 let configES = null;
 function startConfig(){
   if(configES) return;
-  configES = subscribe('config', d=>{ config = Object.assign({topic:'',notice:'',groups:DEFAULT_GROUPS}, d||{}); applyConfig(); });
+  configES = subscribe('config', d=>{ configLoaded=true; config = Object.assign({topic:'',notice:'',groups:DEFAULT_GROUPS}, d||{}); applyConfig(); });
 }
 /* 모둠별 주제: 선생님이 따로 바꾼 주제 > 공통 주제 > 자동 배정(같은 번호표 → 모든 기기에서 같은 결과) */
 function seededShuffle(arr, seed){
@@ -2776,7 +2807,41 @@ function topicFor(g, kind){
   return (g && ov && ov['g'+g]) || autoTopicKind(g, kind);
 }
 function allUsedTopics(){ const n=+config.groups||DEFAULT_GROUPS, u=new Set(); for(let g=1;g<=n;g++){ u.add(topicFor(g,'voice')); u.add(topicFor(g,'chat')); } return u; }
+/* ---- 수업 열기/닫기 ---- */
+let configLoaded=false;
+function isOpen(){ return config.open===true && (!config.closeAt || Date.now() < config.closeAt); }
+function applyLock(){
+  const adminOn = !$('admin').classList.contains('hidden');
+  const locked = !adminOn && !isOpen();
+  $('lockScreen').classList.toggle('hidden', !locked);
+  if(locked){
+    if(!configLoaded){ $('lockIco').textContent='⏳'; $('lockTitle').textContent='연결하는 중…'; $('lockMsg').textContent='잠시만 기다려 주세요. 계속 이 화면이면 와이파이를 확인해 주세요.'; }
+    else { $('lockIco').textContent='🔒'; $('lockTitle').textContent='지금은 모둠회의 시간이 아니에요'; $('lockMsg').textContent='선생님이 수업을 열어 주시면 들어올 수 있어요.'; }
+    if(listening) stopMic();
+    stopSpeechTest && stopSpeechTest();
+  }
+  // 선생님 화면 상태 표시
+  const p=$('openPanel'); if(!p) return;
+  const open=isOpen(); p.classList.toggle('is-open',open);
+  if(open){
+    if(config.closeAt){ const left=Math.max(0,config.closeAt-Date.now()); const m=Math.floor(left/60000), sec=Math.floor(left/1000)%60;
+      $('openState').textContent=`🔓 수업 열림 · ${m}분 ${String(sec).padStart(2,'0')}초 뒤 자동으로 닫혀요`; }
+    else $('openState').textContent='🔓 수업 열림 · 직접 닫을 때까지';
+  } else $('openState').textContent='🔒 수업 닫힘 · 학생은 들어올 수 없어요';
+}
+setInterval(applyLock, 1000);
+function openClass(){
+  const min=+$('openDur').value;
+  const closeAt = min ? Date.now()+min*60000 : null;
+  config.open=true; config.closeAt=closeAt; applyLock();
+  dbPatch('config',{open:true, closeAt}).then(()=>toast('🔓 수업을 열었어요!')).catch(()=>toast('열기 실패. 연결을 확인해 주세요.'));
+}
+function closeClass(){
+  config.open=false; config.closeAt=null; applyLock();
+  dbPatch('config',{open:false, closeAt:null}).then(()=>toast('🔒 수업을 닫았어요. 학생 화면이 모두 잠겼어요.')).catch(()=>toast('닫기 실패. 연결을 확인해 주세요.'));
+}
 function applyConfig(){
+  applyLock();
   [['.voiceTopic',voiceGroup,'voice'],['.chatTopic',chatGroup,'chat']].forEach(([sel,g,k])=>{ const t=topicFor(g,k); document.querySelectorAll(sel).forEach(el=>{ el.classList.toggle('hidden',!t); el.querySelector('span').textContent=t; }); });
   document.querySelectorAll('.voiceNotice,.chatNotice').forEach(el=>{ el.classList.toggle('hidden',!config.notice); el.textContent='📢 '+config.notice; });
   renderGroupGrids();
@@ -2885,7 +2950,7 @@ function renderVoice(){
   if(atBottom) log.scrollTop=log.scrollHeight;
 }
 function saveVoice(text){
-  text=text.trim(); if(!text) return;
+  text=text.trim(); if(!text || !isOpen()) return;
   dbPush(`voice/g${voiceGroup}`, {text, t:{'.sv':'timestamp'}}).catch(()=>toast('저장에 실패했어요. 인터넷 연결을 확인해 주세요.'));
 }
 /* 선생님 관전용: 지금 녹음 중인지 + 인식 중인 말(실시간)을 0.7초마다 알려 줌 */
@@ -2904,6 +2969,7 @@ function setRecUI(on){
 let recStartedOK=false, quickFails=0, recBegan=0, gotResult=false, startWatch=null;
 function startMic(){
   hideRecErr();
+  if(!isOpen()){ applyLock(); return; }
   const prob=envProblem();
   if(prob){ showRecErr(prob); return; }
   if(listening) return;
@@ -3037,6 +3103,7 @@ function renderChat(){
 let sending=false;
 function sendChat(){
   const ta=$('chatInput'); const raw=ta.value.trim(); if(!raw || sending) return;
+  if(!isOpen()){ applyLock(); return; }
   const f=filterBad(raw.slice(0,500));
   if(f.hit) toast('🙂 고운 말을 써요. 바르지 않은 말은 가려졌어요.',3000);
   sending=true; ta.value=''; autoGrow();
@@ -3226,6 +3293,7 @@ function closeQR(){ $('qrModal').classList.add('hidden'); }
 
 /* 시작 */
 $('verLabel').textContent='버전 '+APP_VERSION;
+applyLock();
 renderGroupGrids();
 startConfig();
 if(location.hash==='#test') openMicTest();
