@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>말과 글로 하는 모둠회의</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ================= 설정 ================= */
+:root{
+  --bg:#f6f3ec; --card:#fff; --ink:#26303a; --sub:#6b7480; --line:#e5dfd3;
+  --voice:#ff7a45; --voice-soft:#fff0e8; --chat:#3a86ff; --chat-soft:#eaf2ff;
+  --ok:#22a06b; --danger:#e5484d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;cursor:pointer;border:none}
+input,textarea,select{font-family:inherit}
+.hidden{display:none!important}
+.screen{min-height:100%;display:flex;flex-direction:column}
+.title-font{font-family:'Jua',sans-serif;font-weight:400}
+
+/* 홈 */
+#home{align-items:center;justify-content:center;padding:28px 20px;gap:26px}
+#home h1{font-family:'Jua';font-size:clamp(30px,5vw,46px);text-align:center;line-height:1.25}
+#home .goal{background:#fff;border:2px dashed var(--line);border-radius:14px;padding:10px 18px;color:var(--sub);font-size:15px;text-align:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;width:100%;max-width:820px}
+.mode-card{background:var(--card);border-radius:24px;padding:30px 24px;text-align:left;box-shadow:0 6px 0 rgba(0,0,0,.06);border:3px solid transparent;transition:transform .12s}
+.mode-card:active{transform:scale(.98)}
+.mode-card .emoji{font-size:54px}
+.mode-card .step{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:99px;margin:10px 0 6px}
+.mode-card h2{font-family:'Jua';font-size:28px;margin-bottom:6px}
+.mode-card p{color:var(--sub);font-size:15px;line-height:1.5}
+.mode-card.voice{border-color:var(--voice)} .mode-card.voice .step{background:var(--voice-soft);color:var(--voice)}
+.mode-card.chat{border-color:var(--chat)} .mode-card.chat .step{background:var(--chat-soft);color:var(--chat)}
+.teacher-link{background:none;color:var(--sub);font-size:14px;text-decoration:underline}
+
+/* 공통 상단바 */
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.topbar .back{background:#f0ece4;border-radius:12px;padding:8px 14px;font-size:15px;font-weight:700}
+.topbar .t{font-family:'Jua';font-size:22px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{padding:5px 12px;border-radius:99px;font-size:14px;font-weight:700}
+.conn{font-size:12px;color:var(--sub)} .conn.on::before{content:'● ';color:var(--ok)} .conn.off::before{content:'● ';color:var(--danger)}
+.topic{margin:12px 16px 0;background:#fffbe6;border:2px solid #ffe08a;border-radius:14px;padding:10px 14px;font-size:16px}
+.topic b{font-family:'Jua';font-weight:400;color:#b7791f;margin-right:6px}
+.notice{margin:8px 16px 0;background:#ffe9ea;border-radius:12px;padding:8px 14px;font-size:15px;color:#b4232a}
+
+/* 모둠 선택 */
+.setup{flex:1;display:flex;flex-direction:column;align-items:center;padding:28px 18px;gap:18px}
+.setup h2{font-family:'Jua';font-size:28px;font-weight:400}
+.group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px;width:100%;max-width:700px}
+.group-btn{background:#fff;border:3px solid var(--line);border-radius:18px;padding:18px 0;font-family:'Jua';font-size:24px}
+.group-btn.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.name-input{width:100%;max-width:420px;font-size:20px;padding:14px 16px;border-radius:14px;border:3px solid var(--line);text-align:center;outline:none}
+.name-input:focus{border-color:var(--chat)}
+.go-btn{background:var(--accent);color:#fff;font-family:'Jua';font-size:24px;padding:14px 48px;border-radius:16px;box-shadow:0 5px 0 rgba(0,0,0,.15)}
+.go-btn:disabled{opacity:.35}
+
+/* 말 모둠회의 */
+#voice{--accent:var(--voice);--accent-soft:var(--voice-soft)}
+.voice-main{flex:1;display:flex;flex-direction:column;padding:14px 16px 16px;gap:14px;max-width:960px;width:100%;margin:0 auto}
+.rec-panel{background:#fff;border-radius:22px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.rec-state{font-family:'Jua';font-size:22px;color:var(--sub);display:flex;align-items:center;gap:8px}
+.rec-state .dot{width:14px;height:14px;border-radius:50%;background:#ccc}
+.rec-state.on{color:var(--danger)} .rec-state.on .dot{background:var(--danger);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+.timer{font-family:'Jua';font-size:56px;color:var(--ink);letter-spacing:2px;line-height:1}
+.rec-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.rec-btn{font-family:'Jua';font-size:24px;padding:14px 26px;border-radius:16px;color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.15)}
+.rec-btn:disabled{opacity:.3;box-shadow:none}
+.rec-btn.start{background:var(--voice)} .rec-btn.stop{background:var(--danger)} .rec-btn.save{background:#5b6b7a}
+.interim{color:var(--sub);font-size:17px;min-height:26px;font-style:italic;text-align:center}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{padding:10px 18px;border-radius:14px;background:#fff;border:2px solid var(--line);font-family:'Jua';font-size:19px}
+.tab.sel{background:#5b5bd6;border-color:#5b5bd6;color:#fff}
+.col.one{height:320px;font-size:16px}
+.live{font-size:12px;font-weight:700;color:#fff;background:var(--danger);border-radius:99px;padding:3px 9px;animation:blink 1.2s infinite}
+.idle{font-size:12px;color:var(--sub)}
+.col .itm{color:var(--sub);font-style:italic}
+.col .bad{color:var(--danger);font-weight:700;margin-left:4px}
+.log{flex:1;background:#fff;border-radius:22px;padding:14px;overflow-y:auto;min-height:240px;display:flex;flex-direction:column;gap:10px}
+.log .empty{color:var(--sub);text-align:center;margin:auto;font-size:16px;line-height:1.7}
+.utt{display:flex;gap:10px;align-items:flex-start;background:var(--voice-soft);border-radius:16px;padding:10px 12px}
+.utt.reading{outline:3px solid var(--voice)}
+.utt .num{font-family:'Jua';color:var(--voice);font-size:16px;min-width:26px}
+.utt .txt{flex:1;font-size:19px;line-height:1.5;word-break:keep-all}
+.utt .tm{font-size:12px;color:var(--sub);white-space:nowrap;margin-top:4px}
+.utt .say{background:#fff;border-radius:10px;font-size:18px;padding:4px 8px}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tool{background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px 16px;font-size:16px;font-weight:700}
+.tool.primary{background:var(--voice);border-color:var(--voice);color:#fff}
+.rate{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--sub);background:#fff;border-radius:14px;padding:8px 12px;border:2px solid var(--line)}
+.tts-box{display:flex;gap:8px;background:#fff;border-radius:16px;padding:10px;border:2px solid var(--line)}
+.tts-box input{flex:1;border:none;outline:none;font-size:17px;padding:4px 6px}
+
+/* 글 모둠회의 */
+#chat{--accent:var(--chat);--accent-soft:var(--chat-soft);height:100%}
+#chatRoom{height:100dvh}
+.msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:78%;display:flex;flex-direction:column;align-self:flex-start}
+.msg .who{font-size:13px;font-weight:700;color:var(--sub);margin:0 0 3px 6px}
+.msg .bub{background:#fff;border-radius:4px 18px 18px 18px;padding:10px 14px;font-size:18px;line-height:1.5;word-break:break-word;white-space:pre-wrap;box-shadow:0 1px 0 rgba(0,0,0,.05)}
+.msg .tm{font-size:11px;color:var(--sub);margin:2px 6px 0}
+.msg.me{align-self:flex-end;align-items:flex-end}
+.msg.me .who{display:none}
+.msg.me .bub{background:var(--chat);color:#fff;border-radius:18px 4px 18px 18px}
+.msg.sys{align-self:center;max-width:90%}
+.msg.sys .bub{background:#ececec;color:var(--sub);font-size:14px;border-radius:99px;padding:4px 14px}
+.composer{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line)}
+.composer textarea{flex:1;resize:none;border:2px solid var(--line);border-radius:16px;padding:10px 14px;font-size:18px;outline:none;max-height:120px}
+.composer textarea:focus{border-color:var(--chat)}
+.composer button{background:var(--chat);color:#fff;border-radius:16px;padding:0 22px;font-family:'Jua';font-size:20px}
+
+/* 선생님 */
+#admin{--accent:#5b5bd6}
+.admin-main{padding:16px;display:flex;flex-direction:column;gap:16px;max-width:1300px;width:100%;margin:0 auto}
+.panel{background:#fff;border-radius:18px;padding:16px}
+.panel h3{font-family:'Jua';font-weight:400;font-size:21px;margin-bottom:10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.row label{font-weight:700;min-width:80px}
+.row input,.row select{flex:1;min-width:180px;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font-size:16px}
+.btn{padding:10px 16px;border-radius:12px;font-weight:700;font-size:15px;background:#5b5bd6;color:#fff}
+.btn.gray{background:#eee;color:var(--ink)} .btn.red{background:var(--danger)}
+.admin-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px}
+.gcard{background:#fff;border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.gcard .gh{display:flex;align-items:center;gap:8px}
+.gcard .gh b{font-family:'Jua';font-weight:400;font-size:22px;flex:1}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.col{border-radius:12px;padding:8px;height:200px;overflow-y:auto;font-size:14px;line-height:1.5}
+.col.v{background:var(--voice-soft)} .col.c{background:var(--chat-soft)}
+.col h4{font-size:13px;margin-bottom:4px;position:sticky;top:-8px;background:inherit;padding:2px 0}
+.col p{margin-bottom:4px;word-break:break-word}
+.col .nm{font-weight:700;color:var(--chat)}
+.mini{font-size:12px;padding:5px 9px;border-radius:9px;background:#eee;font-weight:700}
+
+/* 크게보기 / 모달 */
+.overlay{position:fixed;inset:0;background:rgba(20,24,30,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{background:#fff;border-radius:22px;padding:22px;width:100%;max-width:380px;text-align:center}
+.modal h3{font-family:'Jua';font-weight:400;font-size:24px;margin-bottom:12px}
+.modal input{width:100%;font-size:24px;text-align:center;padding:12px;border:3px solid var(--line);border-radius:14px;margin-bottom:12px;letter-spacing:6px}
+.big{background:var(--bg);border-radius:22px;width:100%;max-width:1400px;height:92vh;display:flex;flex-direction:column;padding:18px;gap:12px}
+.big .bh{display:flex;align-items:center;gap:10px}
+.big .bh b{font-family:'Jua';font-weight:400;font-size:30px;flex:1}
+.big .cols{flex:1;min-height:0}
+.big .col{height:auto;font-size:21px;padding:16px}
+.big .col h4{font-size:22px;font-family:'Jua';font-weight:400;top:-16px}
+.big .col p{margin-bottom:10px}
+.compare-q{background:#fff;border-radius:14px;padding:10px 14px;font-size:17px;color:var(--sub)}
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#26303a;color:#fff;padding:12px 20px;border-radius:14px;font-size:16px;z-index:100;max-width:90%;text-align:center}
+</style>
+</head>
+<body>
+
+<!-- ================= 홈 ================= -->
+<section id="home" class="screen">
+  <h1>🗣️ 말과 글로 하는 모둠회의 ✍️</h1>
+  <div class="goal">학습 목표 · 음성 언어와 문자 언어의 특성을 이해할 수 있다.</div>
+  <div class="cards">
+    <button class="mode-card voice" onclick="openVoiceSetup()">
+      <div class="emoji">🎤</div>
+      <span class="step">활동 1 · 모둠당 아이패드 1대</span>
+      <h2>말로만 모둠회의</h2>
+      <p>오직 말로만 회의해요.<br>녹음을 시작하면 아이패드가 우리 말을 듣고 글자로 차곡차곡 적어 줘요.</p>
+    </button>
+    <button class="mode-card chat" onclick="openChatSetup()">
+      <div class="emoji">💬</div>
+      <span class="step">활동 2 · 한 사람당 1대</span>
+      <h2>글로만 모둠회의</h2>
+      <p>모둠 소통방에 들어가서<br>말하지 않고 채팅으로만 회의해요.</p>
+    </button>
+  </div>
+  <button class="teacher-link" onclick="openAdminLogin()">👩‍🏫 선생님 화면</button>
+</section>
+
+<!-- ================= 활동 1: 말 ================= -->
+<section id="voice" class="screen hidden">
+  <div id="voiceSetup" class="screen">
+    <div class="topbar"><button class="back" onclick="goHome()">← 처음으로</button><div class="t">🎤 말로만 모둠회의</div></div>
+    <div class="setup">
+      <h2>우리 모둠을 골라요</h2>
+      <div class="group-grid" id="voiceGroupGrid"></div>
+      <button class="go-btn" id="voiceGo" disabled onclick="enterVoice()">회의 시작</button>
+    </div>
+  </div>
+  <div id="voiceRoom" class="screen hidden">
+    <div class="topbar">
+      <button class="back" onclick="leaveVoice()">← 나가기</button>
+      <div class="t" id="voiceTitle">🎤 모둠</div>
+      <span class="conn" id="voiceConn">연결 중</span>
+    </div>
+    <div class="topic voiceTopic hidden"><b>회의 주제</b><span></span></div>
+    <div class="notice voiceNotice hidden"></div>
+    <div class="voice-main">
+      <div class="rec-panel">
+        <div class="rec-state" id="micState"><span class="dot"></span><span id="micStateText">녹음 대기 중</span></div>
+        <div class="timer" id="timer">00:00</div>
+        <div class="rec-btns">
+          <button class="rec-btn start" id="recStart" onclick="startMic()">🎙️ 녹음 시작</button>
+          <button class="rec-btn stop" id="recStop" onclick="stopMic()" disabled>🛑 정지</button>
+          <button class="rec-btn save" onclick="downloadVoice()">💾 텍스트 저장</button>
+        </div>
+        <div class="interim" id="interim"></div>
+      </div>
+      <div class="log" id="voiceLog"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 활동 2: 글 ================= -->
+<section id="chat" class="screen hidden">
+  <div id="chatSetup" class="screen">
+    <div class="topbar"><button class="back" onclick="goHome()">← 처음으로</button><div class="t">💬 글로만 모둠회의</div></div>
+    <div class="setup">
+      <h2>우리 모둠을 골라요</h2>
+      <div class="group-grid" id="chatGroupGrid"></div>
+      <h2>내 이름</h2>
+      <input class="name-input" id="chatName" maxlength="10" placeholder="이름을 써요" oninput="checkChatReady()">
+      <button class="go-btn" id="chatGo" disabled onclick="enterChat()">소통방 입장</button>
+    </div>
+  </div>
+  <div id="chatRoom" class="screen hidden">
+    <div class="topbar">
+      <button class="back" onclick="leaveChat()">← 나가기</button>
+      <div class="t" id="chatTitle">💬 모둠 소통방</div>
+      <span class="conn" id="chatConn">연결 중</span>
+    </div>
+    <div class="topic chatTopic hidden"><b>회의 주제</b><span></span></div>
+    <div class="notice chatNotice hidden"></div>
+    <div class="msgs" id="msgs"></div>
+    <div class="composer">
+      <textarea id="chatInput" rows="1" placeholder="하고 싶은 말을 글로 써요"></textarea>
+      <button onclick="sendChat()">보내기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 선생님 ================= -->
+<section id="admin" class="screen hidden">
+  <div class="topbar">
+    <button class="back" onclick="leaveAdmin()">← 처음으로</button>
+    <div class="t">👩‍🏫 선생님 화면</div>
+    <span class="conn" id="adminConn">연결 중</span>
+  </div>
+  <div class="admin-main">
+    <div class="panel">
+      <h3>⚙️ 수업 설정</h3>
+      <div class="row"><label>회의 주제</label><input id="cfgTopic" placeholder="예) 학급 체육대회 때 할 경기 정하기"></div>
+      <div class="row"><label>공지</label><input id="cfgNotice" placeholder="모든 화면 위에 보이는 한 줄 공지 (비우면 숨김)"></div>
+      <div class="row"><label>모둠 수</label><select id="cfgGroups"></select>
+        <button class="btn" onclick="saveConfig()">저장하기</button>
+        <button class="btn red" onclick="clearAll()">🗑 모든 기록 지우기</button>
+      </div>
+    </div>
+    <div class="tabs" id="adminTabs">
+      <button class="tab sel" data-v="voice" onclick="setAdminView('voice')">🎤 말 회의 관전</button>
+      <button class="tab" data-v="chat" onclick="setAdminView('chat')">💬 채팅 관전</button>
+      <button class="tab" data-v="compare" onclick="setAdminView('compare')">📊 말·글 비교</button>
+    </div>
+    <div class="admin-groups" id="adminGroups"></div>
+  </div>
+</section>
+
+<!-- 모달들 -->
+<div class="overlay hidden" id="loginModal">
+  <div class="modal">
+    <h3>선생님 비밀번호</h3>
+    <input type="password" inputmode="numeric" id="pwInput" maxlength="10">
+    <div class="row" style="justify-content:center">
+      <button class="btn gray" onclick="closeLogin()">취소</button>
+      <button class="btn" onclick="checkPw()">들어가기</button>
+    </div>
+  </div>
+</div>
+<div class="overlay hidden" id="bigModal" onclick="if(event.target===this)closeBig()">
+  <div class="big">
+    <div class="bh"><b id="bigTitle">모둠</b><button class="btn gray" onclick="closeBig()">닫기 ✕</button></div>
+    <div class="compare-q">🤔 두 회의 기록을 비교해 봐요. 말로 한 회의와 글로 한 회의는 무엇이 같고 무엇이 다른가요?</div>
+    <div class="cols" id="bigCols"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   설정: 필요하면 여기만 고치면 돼요
+   ========================================================= */
+const DB_URL   = "https://ninja-game-56862-default-rtdb.firebaseio.com"; // Firebase Realtime Database 주소
+const ROOT     = "speakchat";   // 데이터베이스 안에서 이 앱이 쓰는 폴더 이름
+const ADMIN_PW = "1852";        // 선생님 화면 비밀번호
+const DEFAULT_GROUPS = 6;
+
+/* ================= 공통 도구 ================= */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtTime = t => { if(!t) return ''; const d=new Date(t); return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); };
+let toastTimer;
+function toast(msg, ms=2600){
+  let el=document.querySelector('.toast'); if(!el){el=document.createElement('div');el.className='toast';document.body.appendChild(el);}
+  el.textContent=msg; el.style.display='block'; clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.style.display='none',ms);
+}
+function show(id){ ['home','voice','chat','admin'].forEach(s=>$(s).classList.toggle('hidden', s!==id)); window.scrollTo(0,0); }
+function goHome(){ show('home'); }
+const LS = { get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v;}catch(e){return d;}}, set(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+const clientId = LS.get('sc_cid', null) || (()=>{const id=Math.random().toString(36).slice(2,10); LS.set('sc_cid',id); return id;})();
+
+/* ---- Firebase REST + 실시간 스트리밍(EventSource) ---- */
+function dbUrl(path){ return `${DB_URL}/${ROOT}${path?'/'+path:''}.json`; }
+async function dbPush(path, obj){ const r=await fetch(dbUrl(path),{method:'POST',body:JSON.stringify(obj)}); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function dbSet(path, obj){ const r=await fetch(dbUrl(path),{method:'PUT',body:JSON.stringify(obj)}); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function dbPatch(path, obj){ const r=await fetch(dbUrl(path),{method:'PATCH',body:JSON.stringify(obj)}); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function dbDel(path){ const r=await fetch(dbUrl(path),{method:'DELETE'}); if(!r.ok) throw new Error(r.status); }
+function setAt(root, path, val){
+  const segs = path.split('/').filter(Boolean);
+  if(!segs.length) return val;
+  if(root===null || typeof root!=='object') root={};
+  let o=root;
+  for(let i=0;i<segs.length-1;i++){ if(o[segs[i]]===null || typeof o[segs[i]]!=='object') o[segs[i]]={}; o=o[segs[i]]; }
+  const last=segs[segs.length-1];
+  if(val===null) delete o[last]; else o[last]=val;
+  return root;
+}
+function subscribe(path, onData, connEl){
+  let data=null, raf=0;
+  const es=new EventSource(dbUrl(path));
+  const fire=()=>{ if(raf) return; raf=requestAnimationFrame(()=>{raf=0; onData(data);}); };
+  es.addEventListener('put', e=>{ const m=JSON.parse(e.data); data=setAt(data,m.path,m.data); fire(); setConn(connEl,true); });
+  es.addEventListener('patch', e=>{ const m=JSON.parse(e.data); for(const k in m.data) data=setAt(data,(m.path.replace(/\/$/,''))+'/'+k,m.data[k]); fire(); });
+  es.addEventListener('cancel', ()=>{ setConn(connEl,false); toast('데이터베이스 접근이 거부됐어요. 선생님께 알려 주세요.'); });
+  es.onopen = ()=>setConn(connEl,true);
+  es.onerror = ()=>setConn(connEl,false);
+  return es;
+}
+function setConn(el,on){ if(!el) return; el.className='conn '+(on?'on':'off'); el.textContent=on?'연결됨':'연결 끊김'; }
+const sorted = obj => Object.entries(obj||{}).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.t||0)-(b.t||0));
+
+/* ---- 설정(회의 주제/공지/모둠 수) ---- */
+let config = {topic:'', notice:'', groups:DEFAULT_GROUPS};
+let configES = null;
+function startConfig(){
+  if(configES) return;
+  configES = subscribe('config', d=>{ config = Object.assign({topic:'',notice:'',groups:DEFAULT_GROUPS}, d||{}); applyConfig(); });
+}
+function applyConfig(){
+  document.querySelectorAll('.voiceTopic,.chatTopic').forEach(el=>{ el.classList.toggle('hidden',!config.topic); el.querySelector('span').textContent=config.topic; });
+  document.querySelectorAll('.voiceNotice,.chatNotice').forEach(el=>{ el.classList.toggle('hidden',!config.notice); el.textContent='📢 '+config.notice; });
+  renderGroupGrids();
+  if(!$('admin').classList.contains('hidden')) fillAdminConfig();
+}
+let voiceGroupSel=null, chatGroupSel=null;
+function renderGroupGrids(){
+  const n=+config.groups||DEFAULT_GROUPS;
+  [['voiceGroupGrid','voice'],['chatGroupGrid','chat']].forEach(([gid,kind])=>{
+    const sel = kind==='voice'?voiceGroupSel:chatGroupSel;
+    $(gid).innerHTML = Array.from({length:n},(_,i)=>`<button class="group-btn ${sel===i+1?'sel':''}" onclick="pickGroup('${kind}',${i+1})">${i+1}모둠</button>`).join('');
+  });
+}
+function pickGroup(kind,g){
+  if(kind==='voice'){ voiceGroupSel=g; $('voiceGo').disabled=false; }
+  else { chatGroupSel=g; LS.set('sc_group',g); checkChatReady(); }
+  renderGroupGrids();
+}
+
+/* ================= 활동 1: 말로만 모둠회의 ================= */
+let voiceES=null, voiceItems=[], voiceGroup=null;
+let recog=null, listening=false, savedIdx=new Set(), lastInterim='';
+let timerStart=0, timerAcc=0, timerInt=null;
+let statusTimer=null, lastStatusSent='', lastStatusAt=0;
+
+function openVoiceSetup(){ startConfig(); show('voice'); $('voiceSetup').classList.remove('hidden'); $('voiceRoom').classList.add('hidden'); renderGroupGrids(); }
+function enterVoice(){
+  voiceGroup=voiceGroupSel;
+  $('voiceTitle').textContent=`🎤 ${voiceGroup}모둠 · 말로만 모둠회의`;
+  $('voiceSetup').classList.add('hidden'); $('voiceRoom').classList.remove('hidden');
+  timerAcc=0; updateTimer(); setRecUI(false);
+  voiceES = subscribe(`voice/g${voiceGroup}`, d=>{ voiceItems=sorted(d); renderVoice(); }, $('voiceConn'));
+  renderVoice();
+}
+function leaveVoice(){
+  stopMic();
+  if(voiceES){voiceES.close(); voiceES=null;}
+  $('voiceRoom').classList.add('hidden'); $('voiceSetup').classList.remove('hidden');
+}
+function renderVoice(){
+  const log=$('voiceLog');
+  if(!voiceItems.length){ log.innerHTML='<div class="empty">아직 기록이 없어요.<br>[녹음 시작]을 누르고 모둠 친구들과 말로 회의해 보세요.<br>말한 내용이 여기에 글자로 차곡차곡 쌓여요.</div>'; return; }
+  const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+  log.innerHTML = voiceItems.map((it,i)=>`<div class="utt"><span class="num">${i+1}</span><span class="txt">${esc(it.text)}</span><span class="tm">${fmtTime(it.t)}</span></div>`).join('');
+  if(atBottom) log.scrollTop=log.scrollHeight;
+}
+function saveVoice(text){
+  text=text.trim(); if(!text) return;
+  dbPush(`voice/g${voiceGroup}`, {text, t:{'.sv':'timestamp'}}).catch(()=>toast('저장에 실패했어요. 인터넷 연결을 확인해 주세요.'));
+}
+/* 선생님 관전용: 지금 녹음 중인지 + 인식 중인 말(실시간)을 0.7초마다 알려 줌 */
+function sendStatus(force){
+  if(!voiceGroup) return;
+  const s = JSON.stringify({rec:listening, interim:listening?($('interim').textContent||''):''});
+  if(!force && s===lastStatusSent && Date.now()-lastStatusAt<5000) return;
+  lastStatusSent=s; lastStatusAt=Date.now();
+  dbSet(`status/g${voiceGroup}`, {...JSON.parse(s), t:{'.sv':'timestamp'}}).catch(()=>{});
+}
+function setRecUI(on){
+  $('recStart').disabled=on; $('recStop').disabled=!on;
+  $('micState').classList.toggle('on',on);
+  $('micStateText').textContent = on ? '녹음 중… 그냥 말하면 기록돼요' : '녹음 대기 중';
+}
+function startMic(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ toast('이 브라우저는 음성 인식을 지원하지 않아요. 아이패드의 사파리(Safari)로 열어 주세요.',4000); return; }
+  if(listening) return;
+  listening=true;
+  timerStart=Date.now(); clearInterval(timerInt); timerInt=setInterval(updateTimer,500);
+  runRecog(); setRecUI(true);
+  clearInterval(statusTimer); statusTimer=setInterval(()=>sendStatus(false),700); sendStatus(true);
+}
+function runRecog(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recog=new SR(); recog.lang='ko-KR'; recog.continuous=true; recog.interimResults=true;
+  savedIdx=new Set(); lastInterim='';
+  recog.onresult = e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal){ if(!savedIdx.has(i)){ savedIdx.add(i); saveVoice(r[0].transcript); } }
+      else interim+=r[0].transcript;
+    }
+    lastInterim=interim; $('interim').textContent=interim;
+  };
+  recog.onerror = e=>{
+    if(e.error==='not-allowed' || e.error==='service-not-allowed'){ toast('마이크 사용을 허용해 주세요. (설정 › Safari › 마이크)',4000); stopMic(); }
+  };
+  recog.onend = ()=>{
+    if(lastInterim.trim()){ saveVoice(lastInterim); lastInterim=''; }
+    $('interim').textContent='';
+    // 말이 잠깐 끊겨도 자동으로 다시 듣기 → 정지 버튼을 누를 때까지 계속 기록
+    if(listening) setTimeout(()=>{ if(listening){ try{ runRecog(); }catch(err){} } },250);
+  };
+  try{ recog.start(); }catch(err){}
+}
+function stopMic(){
+  const wasOn = listening;
+  listening=false;
+  if(recog){ try{recog.stop();}catch(e){} }
+  if(wasOn){ timerAcc += Date.now()-timerStart; }
+  clearInterval(timerInt); updateTimer();
+  clearInterval(statusTimer); if(wasOn) sendStatus(true);
+  setRecUI(false);
+}
+function updateTimer(){
+  const ms = timerAcc + (listening ? Date.now()-timerStart : 0);
+  const s=Math.floor(ms/1000); $('timer').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+
+function downloadText(filename, text){
+  const blob=new Blob(['﻿'+text],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
+}
+function downloadVoice(){
+  if(!voiceItems.length){ toast('저장할 기록이 아직 없어요.'); return; }
+  const head=`[${voiceGroup}모둠 말로 한 모둠회의]${config.topic?'\n주제: '+config.topic:''}\n\n`;
+  downloadText(`${voiceGroup}모둠_말회의.txt`, head+voiceItems.map((it,i)=>`${i+1}. (${fmtTime(it.t)}) ${it.text}`).join('\n'));
+}
+
+/* ================= 비속어 필터 ================= */
+// 목록에 단어를 더 넣고 싶으면 여기에 추가하면 돼요.
+const BAD_WORDS = [
+  '씨발','시발','씨팔','시팔','씨빨','쓰발','쉬발','시벌','씨벌','슈발','십새','십세','씹','시바','씨바','ㅅㅂ','ㅆㅂ','ㅆㅃ','ㅅ1ㅂ',
+  '병신','븅신','빙신','병쉰','ㅂㅅ','ㅄ','등신','좆','존나','졸라','존내','존니','ㅈㄴ','ㅈ같','좃',
+  '개새끼','개색기','개새기','개새','개색','개세끼','개쉐','개섀','새끼','쌔끼','색기','섀끼','새기','ㅅㄲ','ㄱㅅㄲ',
+  '미친놈','미친년','미친새','미친','미쳤냐','ㅁㅊ','ㅁ친','지랄','ㅈㄹ','염병','엠창','느금','니애미','니엄마','니미','애미','애비',
+  '썅','쌍년','쌍놈','꺼져','닥쳐','닥치','ㄷㅊ','뒤져','뒈져','디져','엿먹','호로','후레','찐따','또라이','돌아이','틀딱','한남','김치녀',
+  '섹스','야동','보지','자지','fuck','fuk','fxck','shit','bitch','asshole','sex','wtf','stfu'
+];
+const SEP = "[\\s.,~!@#$%^&*()\\-_=+\\[\\]{}|;:'\"<>/?`0-9ㆍ·]*";
+const BAD_RE = new RegExp(BAD_WORDS
+  .sort((a,b)=>b.length-a.length)
+  .map(w=>[...w].map(ch=>ch.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join(SEP))
+  .join('|'), 'gi');
+function filterBad(text){
+  let hit=false;
+  const out = String(text).replace(BAD_RE, m=>{ hit=true; return '♡'.repeat(Math.min(Math.max(m.replace(/\s/g,'').length,2),4)); });
+  return {text:out, hit};
+}
+
+/* ================= 활동 2: 글로만 모둠회의 ================= */
+let chatES=null, chatItems=[], chatGroup=null, myName='';
+function openChatSetup(){
+  startConfig(); show('chat'); $('chatSetup').classList.remove('hidden'); $('chatRoom').classList.add('hidden');
+  $('chatName').value = LS.get('sc_name','');
+  const g=+LS.get('sc_group',0); if(g) chatGroupSel=g;
+  renderGroupGrids(); checkChatReady();
+}
+function checkChatReady(){ $('chatGo').disabled = !(chatGroupSel && $('chatName').value.trim()); }
+function enterChat(){
+  const nm=filterBad($('chatName').value.trim());
+  if(nm.hit){ toast('이름에 바르지 않은 말이 있어요. 내 이름을 써 주세요.'); return; }
+  myName=nm.text; chatGroup=chatGroupSel; LS.set('sc_name',myName);
+  $('chatTitle').textContent=`💬 ${chatGroup}모둠 소통방`;
+  $('chatSetup').classList.add('hidden'); $('chatRoom').classList.remove('hidden');
+  chatItems=[]; renderChat();
+  chatES = subscribe(`chat/g${chatGroup}`, d=>{ chatItems=sorted(d); renderChat(); }, $('chatConn'));
+  dbPush(`chat/g${chatGroup}`, {sys:true, text:`${myName} 님이 들어왔어요`, t:{'.sv':'timestamp'}}).catch(()=>{});
+  setTimeout(()=>$('chatInput').focus(),300);
+}
+function leaveChat(){ if(chatES){chatES.close(); chatES=null;} $('chatRoom').classList.add('hidden'); $('chatSetup').classList.remove('hidden'); }
+function renderChat(){
+  const box=$('msgs');
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
+  if(!chatItems.length){ box.innerHTML='<div class="msg sys"><div class="bub">소통방이 열렸어요. 말하지 말고 글로만 회의해요 🤫</div></div>'; return; }
+  box.innerHTML = chatItems.map(m=>{
+    if(m.sys) return `<div class="msg sys"><div class="bub">${esc(m.text)}</div></div>`;
+    const me = m.cid===clientId;
+    return `<div class="msg ${me?'me':''}"><div class="who">${esc(m.name)}</div><div class="bub">${esc(filterBad(m.text).text)}</div><div class="tm">${fmtTime(m.t)}</div></div>`;
+  }).join('');
+  if(atBottom) box.scrollTop=box.scrollHeight;
+}
+let sending=false;
+function sendChat(){
+  const ta=$('chatInput'); const raw=ta.value.trim(); if(!raw || sending) return;
+  const f=filterBad(raw.slice(0,500));
+  if(f.hit) toast('🙂 고운 말을 써요. 바르지 않은 말은 가려졌어요.',3000);
+  sending=true; ta.value=''; autoGrow();
+  const msg={name:myName, cid:clientId, text:f.text, t:{'.sv':'timestamp'}};
+  if(f.hit){ msg.bad=true; msg.orig=raw.slice(0,500); }
+  dbPush(`chat/g${chatGroup}`, msg)
+    .then(()=>{ const b=$('msgs'); b.scrollTop=b.scrollHeight; })
+    .catch(()=>{ ta.value=raw; toast('보내지 못했어요. 다시 눌러 주세요.'); })
+    .finally(()=>{ sending=false; });
+}
+function autoGrow(){ const ta=$('chatInput'); ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,120)+'px'; }
+$('chatInput').addEventListener('input',autoGrow);
+$('chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); sendChat(); } });
+
+/* ================= 선생님 화면 (관전 모드) ================= */
+let adminES=null, adminData={}, bigGroup=null, adminView='voice';
+function openAdminLogin(){ $('loginModal').classList.remove('hidden'); $('pwInput').value=''; setTimeout(()=>$('pwInput').focus(),100); }
+function closeLogin(){ $('loginModal').classList.add('hidden'); }
+$('pwInput').addEventListener('keydown',e=>{ if(e.key==='Enter') checkPw(); });
+function checkPw(){
+  if($('pwInput').value!==ADMIN_PW){ toast('비밀번호가 달라요.'); $('pwInput').value=''; return; }
+  closeLogin(); startConfig(); show('admin'); fillAdminConfig();
+  if(!adminES) adminES = subscribe('', d=>{ adminData=d||{}; renderAdmin(); }, $('adminConn'));
+  renderAdmin();
+}
+function leaveAdmin(){ if(adminES){adminES.close(); adminES=null;} closeBig(); goHome(); }
+function setAdminView(v){
+  adminView=v;
+  document.querySelectorAll('#adminTabs .tab').forEach(t=>t.classList.toggle('sel', t.dataset.v===v));
+  renderAdmin(true);
+}
+function fillAdminConfig(){
+  if(document.activeElement!==$('cfgTopic')) $('cfgTopic').value=config.topic||'';
+  if(document.activeElement!==$('cfgNotice')) $('cfgNotice').value=config.notice||'';
+  $('cfgGroups').innerHTML=Array.from({length:12},(_,i)=>`<option value="${i+1}" ${(+config.groups)===i+1?'selected':''}>${i+1}개 모둠</option>`).join('');
+}
+function saveConfig(){
+  dbSet('config',{topic:$('cfgTopic').value.trim(), notice:$('cfgNotice').value.trim(), groups:+$('cfgGroups').value})
+    .then(()=>toast('저장했어요! 학생 화면에 바로 보여요.')).catch(()=>toast('저장 실패. 데이터베이스 규칙을 확인해 주세요.'));
+}
+function clearAll(){
+  if(!confirm('모든 모둠의 말 기록과 채팅 기록을 지울까요? 되돌릴 수 없어요.')) return;
+  Promise.all([dbDel('voice'),dbDel('chat'),dbDel('status')]).then(()=>toast('모두 지웠어요.')).catch(()=>toast('지우기 실패'));
+}
+function clearGroup(g,kind){
+  const label = kind==='voice'?'말 기록':'채팅 기록';
+  if(!confirm(`${g}모둠의 ${label}을 지울까요?`)) return;
+  dbDel(`${kind}/g${g}`).then(()=>toast('지웠어요.'));
+}
+function isLive(g){ const s=adminData.status?.['g'+g]; return !!(s && s.rec && Date.now()-(s.t||0) < 15000); }
+function voiceCol(g, cls){
+  const v=sorted(adminData.voice?.['g'+g]); const s=adminData.status?.['g'+g];
+  let h = v.length ? v.map((it,i)=>`<p>${i+1}. ${esc(it.text)}</p>`).join('') : '<p style="color:#999">아직 없음</p>';
+  if(isLive(g) && s.interim) h += `<p class="itm">🎙️ ${esc(s.interim)}…</p>`;
+  return `<div class="col v ${cls||''}" data-k="v${g}"><h4>🎤 말로 한 회의 (${v.length})</h4>${h}</div>`;
+}
+function chatCol(g, cls){
+  const c=sorted(adminData.chat?.['g'+g]).filter(m=>!m.sys);
+  const h = c.length ? c.map(m=>`<p><span class="nm">${esc(m.name)}</span> ${esc(filterBad(m.text).text)}${m.bad?`<span class="bad" title="원래 쓴 말: ${esc(m.orig||'')}">🚫 ${esc(m.orig||'')}</span>`:''}</p>`).join('') : '<p style="color:#999">아직 없음</p>';
+  const badN = c.filter(m=>m.bad).length;
+  return `<div class="col c ${cls||''}" data-k="c${g}"><h4>💬 글로 한 회의 (${c.length})${badN?` · 🚫 ${badN}`:''}</h4>${h}</div>`;
+}
+function renderAdmin(reset){
+  // 스크롤 위치 기억: 맨 아래를 보고 있었으면 새 글이 오면 따라 내려가고, 위를 보고 있었으면 그대로
+  const keep={};
+  if(!reset) document.querySelectorAll('#adminGroups .col').forEach(c=>{ keep[c.dataset.k]={bottom:c.scrollHeight-c.scrollTop-c.clientHeight<40, top:c.scrollTop}; });
+  const n=+config.groups||DEFAULT_GROUPS;
+  $('adminGroups').innerHTML = Array.from({length:n},(_,i)=>{
+    const g=i+1;
+    const badge = isLive(g) ? '<span class="live">● 녹음 중</span>' : '<span class="idle">대기</span>';
+    let body, btns;
+    if(adminView==='voice'){ body=voiceCol(g,'one'); btns=`${badge}<button class="mini" onclick="clearGroup(${g},'voice')">🗑 지우기</button>`; }
+    else if(adminView==='chat'){ body=chatCol(g,'one'); btns=`<button class="mini" onclick="clearGroup(${g},'chat')">🗑 지우기</button>`; }
+    else { body=`<div class="cols">${voiceCol(g)}${chatCol(g)}</div>`; btns=`<button class="mini" onclick="openBig(${g})">🔍 크게 보기</button><button class="mini" onclick="downloadGroup(${g})">💾 저장</button>`; }
+    return `<div class="gcard"><div class="gh"><b>${g}모둠</b>${btns}</div>${body}</div>`;
+  }).join('');
+  document.querySelectorAll('#adminGroups .col').forEach(c=>{ const k=keep[c.dataset.k]; c.scrollTop = (!k || k.bottom) ? c.scrollHeight : k.top; });
+  if(bigGroup) $('bigCols').innerHTML=voiceCol(bigGroup)+chatCol(bigGroup);
+}
+setInterval(()=>{ if(adminES) renderAdmin(); }, 5000); // 녹음 상태 표시 갱신
+function openBig(g){ bigGroup=g; $('bigTitle').textContent=`${g}모둠 회의 기록 비교`; $('bigCols').innerHTML=voiceCol(g)+chatCol(g); $('bigModal').classList.remove('hidden'); }
+function closeBig(){ bigGroup=null; $('bigModal').classList.add('hidden'); }
+function downloadGroup(g){
+  const v=sorted(adminData.voice?.['g'+g]), c=sorted(adminData.chat?.['g'+g]).filter(m=>!m.sys);
+  const txt=`[${g}모둠 회의 기록]${config.topic?'\n주제: '+config.topic:''}\n\n■ 말로 한 회의\n`+v.map((it,i)=>`${i+1}. (${fmtTime(it.t)}) ${it.text}`).join('\n')+
+    `\n\n■ 글로 한 회의\n`+c.map(m=>`(${fmtTime(m.t)}) ${m.name}: ${m.text}`).join('\n');
+  downloadText(`${g}모둠_회의기록.txt`, txt);
+}
+
+/* 시작 */
+renderGroupGrids();
+startConfig();
+</script>
+</body>
+</html>
