@@ -69,6 +69,21 @@ input,textarea,select{font-family:inherit}
 .qr-url{font-size:13px;color:var(--sub);word-break:break-all;margin-top:8px}
 .qr-modal{background:var(--bg);border-radius:22px;padding:22px;width:100%;max-width:620px;max-height:94vh;overflow:auto;text-align:center}
 .qr-modal h3{font-family:'Jua';font-weight:400;font-size:30px;margin-bottom:10px}
+.rec-err{background:#fff3f3;border:2px solid #f5a3a6;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.6;text-align:left;max-width:640px}
+.test-main{max-width:720px;width:100%;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.test-intro{font-size:16px;color:var(--sub)}
+.tstep{background:#fff;border-radius:16px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;border:2px solid transparent}
+.tstep .ico{font-size:24px;line-height:1.2}
+.tstep>div{flex:1}
+.tstep b{font-size:17px}
+.tstep .msg{font-size:15px;line-height:1.6;color:var(--ink);margin:4px 0 8px}
+.tstep.ok{border-color:#7fd3a8} .tstep.bad{border-color:#f5a3a6;background:#fffafa} .tstep.warn{border-color:#ffd24a}
+.tstep .tool{font-size:15px;padding:8px 14px}
+.tool.primary{background:var(--voice);border-color:var(--voice);color:#fff}
+.meter{height:16px;background:#eee;border-radius:99px;overflow:hidden;margin-top:6px}
+#meterBar{height:100%;width:0;background:linear-gradient(90deg,#22a06b,#ffd24a,#e5484d);transition:width .05s}
+.heard{margin-top:6px;font-size:20px;font-weight:700;min-height:28px;color:var(--voice)}
+.test-tip{background:#fffbe6;border-radius:14px;padding:12px 14px;font-size:15px}
 .gtopic{background:#fffbe6;border-radius:10px;padding:6px 10px;font-size:14px;font-weight:700;display:flex;gap:6px;align-items:center}
 .gtopic span{flex:1}
 #cfgBank{width:100%;min-height:150px;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font-size:15px;line-height:1.6}
@@ -203,7 +218,7 @@ input,textarea,select{font-family:inherit}
     <button class="qr-btn" style="background:var(--voice)" onclick="openQR('voice')">📱 🎤 말 회의 QR</button>
     <button class="qr-btn" style="background:var(--chat)" onclick="openQR('chat')">📱 💬 글 회의 QR</button>
   </div>
-  <button class="teacher-link" onclick="openAdminLogin()">👩‍🏫 선생님 화면</button>
+  <div style="display:flex;gap:18px"><button class="teacher-link" onclick="openMicTest()">🔧 마이크 테스트</button><button class="teacher-link" onclick="openAdminLogin()">👩‍🏫 선생님 화면</button></div>
 </section>
 
 <!-- ================= 활동 1: 말 ================= -->
@@ -213,6 +228,7 @@ input,textarea,select{font-family:inherit}
     <div class="setup">
       <h2>우리 모둠을 골라요</h2>
       <div class="group-grid" id="voiceGroupGrid"></div>
+      <button class="tool" onclick="openMicTest()">🔧 녹음이 잘 되는지 먼저 마이크 테스트하기</button>
       <button class="go-btn" id="voiceGo" disabled onclick="enterVoice()">회의 시작</button>
     </div>
   </div>
@@ -238,9 +254,24 @@ input,textarea,select{font-family:inherit}
           <button class="rec-btn save" onclick="downloadVoice()">💾 텍스트 저장</button>
         </div>
         <div class="interim" id="interim"></div>
+        <div class="rec-err hidden" id="recErr"></div>
       </div>
       <div class="log" id="voiceLog"></div>
     </div>
+  </div>
+</section>
+
+<!-- ================= 마이크 테스트 ================= -->
+<section id="mictest" class="screen hidden">
+  <div class="topbar"><button class="back" onclick="closeMicTest()">← 돌아가기</button><div class="t">🔧 마이크 테스트</div></div>
+  <div class="test-main">
+    <p class="test-intro">말로만 모둠회의를 하기 전에 이 기기에서 녹음이 잘 되는지 차례대로 확인해요.</p>
+    <div class="tstep" id="t1"><span class="ico">⬜</span><div><b>1. 브라우저 확인</b><div class="msg"></div></div></div>
+    <div class="tstep" id="t2"><span class="ico">⬜</span><div><b>2. 음성 인식 기능</b><div class="msg"></div></div></div>
+    <div class="tstep" id="t3"><span class="ico">⬜</span><div><b>3. 마이크 소리 듣기</b><div class="msg"></div><button class="tool primary" onclick="testLevel()">🎙️ 마이크 확인하기</button></div></div>
+    <div class="tstep" id="t4"><span class="ico">⬜</span><div><b>4. 말을 글자로 바꾸기</b><div class="msg"></div><button class="tool primary" onclick="testSpeech()">🗣️ 음성 인식 확인하기</button></div></div>
+    <div class="tstep" id="t5"><span class="ico">⬜</span><div><b>5. 기록 서버 연결</b><div class="msg"></div></div></div>
+    <div class="test-tip">💡 모두 ✅면 준비 끝! ❌가 있으면 그 칸의 안내를 따라 고친 뒤 <b>새로고침</b>해서 다시 확인해요.</div>
   </div>
 </section>
 
@@ -2658,7 +2689,7 @@ function toast(msg, ms=2600){
   let el=document.querySelector('.toast'); if(!el){el=document.createElement('div');el.className='toast';document.body.appendChild(el);}
   el.textContent=msg; el.style.display='block'; clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.style.display='none',ms);
 }
-function show(id){ ['home','voice','chat','admin'].forEach(s=>$(s).classList.toggle('hidden', s!==id)); window.scrollTo(0,0); }
+function show(id){ ['home','voice','chat','admin','mictest'].forEach(s=>$(s).classList.toggle('hidden', s!==id)); window.scrollTo(0,0); }
 function goHome(){ show('home'); }
 const LS = { get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v;}catch(e){return d;}}, set(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
 const clientId = LS.get('sc_cid', null) || (()=>{const id=Math.random().toString(36).slice(2,10); LS.set('sc_cid',id); return id;})();
@@ -2765,6 +2796,67 @@ function pickGroup(kind,g){
   renderGroupGrids();
 }
 
+/* ================= 음성 인식 환경 진단 (공통) ================= */
+const UA = navigator.userAgent || '';
+const IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+function inAppName(){
+  if(/KAKAOTALK/i.test(UA)) return '카카오톡';
+  if(/NAVER\(inapp|NAVER/i.test(UA)) return '네이버 앱';
+  if(/Instagram/i.test(UA)) return '인스타그램';
+  if(/FBAN|FBAV/i.test(UA)) return '페이스북';
+  if(/Line\//i.test(UA)) return '라인';
+  if(/DaumApps/i.test(UA)) return '다음 앱';
+  if(/band/i.test(UA) && /inapp|BAND/i.test(UA)) return '밴드';
+  if(/ zum|Zum/i.test(UA)) return '줌';
+  return '';
+}
+function browserName(){
+  if(inAppName()) return inAppName()+' 안의 브라우저';
+  if(/CriOS/i.test(UA)) return '크롬(iOS)';
+  if(/FxiOS|Firefox/i.test(UA)) return '파이어폭스';
+  if(/Whale/i.test(UA)) return '웨일';
+  if(/SamsungBrowser/i.test(UA)) return '삼성 인터넷';
+  if(/Edg\//i.test(UA)) return '엣지';
+  if(/Chrome/i.test(UA)) return '크롬';
+  if(/Safari/i.test(UA)) return '사파리';
+  return '알 수 없는 브라우저';
+}
+const SAFARI_TIP = IS_IOS
+  ? '아이폰·아이패드는 꼭 <b>사파리(Safari)</b>로 열어야 해요. 주소를 복사해서 사파리 주소창에 붙여 넣거나, 기본 카메라 앱으로 QR을 찍어 주세요.'
+  : '컴퓨터는 <b>크롬(Chrome)</b>이나 <b>엣지(Edge)</b>로 열어 주세요.';
+/* 녹음 전에 막히는 원인이 있으면 안내 문구를 돌려줌 */
+function envProblem(){
+  if(location.protocol==='file:') return '컴퓨터에 저장된 파일로 열려 있어요. GitHub 주소(https://…)로 열어야 마이크를 쓸 수 있어요.';
+  if(!window.isSecureContext) return '보안 연결(https)이 아니어서 마이크를 쓸 수 없어요. https:// 로 시작하는 주소로 열어 주세요.';
+  if(inAppName()) return `지금 <b>${inAppName()}</b> 안에서 열려 있어요. 여기서는 마이크가 안 돼요. ${SAFARI_TIP}`;
+  if(!(window.SpeechRecognition||window.webkitSpeechRecognition)) return `지금 브라우저(${browserName()})는 음성 인식을 지원하지 않아요. ${SAFARI_TIP}`;
+  return '';
+}
+/* 음성 인식 오류 → 쉬운 안내 */
+function speechErrorHelp(code){
+  const iosPerm = '설정 › Safari(iOS 18 이상은 설정 › 앱 › Safari) › 마이크를 <b>허용</b>으로 바꾸고, 사파리 주소창 왼쪽 <b>가가</b>(또는 aA) 버튼 › 웹 사이트 설정 › 마이크 <b>허용</b>으로 바꾼 뒤 새로고침해 주세요.';
+  const pcPerm = '주소창 왼쪽 자물쇠(또는 설정) 아이콘 › 마이크 <b>허용</b>으로 바꾸고 새로고침해 주세요. 윈도우라면 설정 › 개인 정보 › 마이크에서 브라우저 사용도 켜 주세요.';
+  switch(code){
+    case 'not-allowed': return '마이크(또는 음성 인식) 사용이 막혀 있어요. '+(IS_IOS?iosPerm:pcPerm);
+    case 'service-not-allowed': return IS_IOS
+      ? '아이폰·아이패드의 <b>받아쓰기</b>가 꺼져 있거나 막혀 있어요. 설정 › 일반 › 키보드 › <b>받아쓰기 활성화</b>를 켜 주세요. 설정 › 스크린 타임 › 콘텐츠 및 개인정보 보호 제한 › 허용된 앱에서 <b>Siri 및 받아쓰기</b>가 꺼져 있어도 안 돼요. 학교 디벗은 관리 설정으로 받아쓰기가 막혀 있을 수 있으니 정보 담당 선생님께 확인해 주세요.'
+      : '이 브라우저에서 음성 인식 서비스를 쓸 수 없어요. 크롬이나 엣지로 열어 주세요.';
+    case 'audio-capture': return '마이크를 찾지 못했어요. 이어폰·블루투스 연결을 빼 보고, 다른 앱(카메라, 통화, 녹음 앱)이 마이크를 쓰고 있다면 닫아 주세요.';
+    case 'network': return '음성 인식 서버에 연결하지 못했어요. 인터넷(와이파이) 연결을 확인해 주세요.';
+    case 'language-not-supported': return '이 기기에서 한국어 음성 인식을 지원하지 않아요. 설정 › 일반 › 키보드에 한국어 키보드가 있는지, 받아쓰기 언어에 한국어가 있는지 확인해 주세요.';
+    case 'no-speech': return '소리가 들리지 않았어요. 마이크 가까이에서 또박또박 말해 보세요.';
+    case 'aborted': return '음성 인식이 중간에 멈췄어요. 다시 시도해 주세요.';
+    default: return '음성 인식 중 문제가 생겼어요. (오류: '+code+')';
+  }
+}
+const FATAL_SPEECH = ['not-allowed','service-not-allowed','audio-capture','language-not-supported'];
+
+function showRecErr(html){
+  $('recErr').innerHTML = `⚠️ ${html}<div style="margin-top:8px"><button class="btn" onclick="openMicTest()">🔧 마이크 테스트 하기</button></div>`;
+  $('recErr').classList.remove('hidden');
+}
+function hideRecErr(){ $('recErr').classList.add('hidden'); }
+
 /* ================= 활동 1: 말로만 모둠회의 ================= */
 let voiceES=null, voiceItems=[], voiceGroup=null;
 let recog=null, listening=false, savedIdx=new Set(), lastInterim='';
@@ -2809,20 +2901,30 @@ function setRecUI(on){
   $('micState').classList.toggle('on',on);
   $('micStateText').textContent = on ? '녹음 중… 그냥 말하면 기록돼요' : '녹음 대기 중';
 }
+let recStartedOK=false, quickFails=0, recBegan=0, gotResult=false, startWatch=null;
 function startMic(){
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ toast('이 브라우저는 음성 인식을 지원하지 않아요. 아이패드의 사파리(Safari)로 열어 주세요.',4000); return; }
+  hideRecErr();
+  const prob=envProblem();
+  if(prob){ showRecErr(prob); return; }
   if(listening) return;
-  listening=true;
+  listening=true; recStartedOK=false; quickFails=0;
   timerStart=Date.now(); clearInterval(timerInt); timerInt=setInterval(updateTimer,500);
   runRecog(); setRecUI(true);
   clearInterval(statusTimer); statusTimer=setInterval(()=>sendStatus(false),700); sendStatus(true);
+  // 4초 안에 녹음이 실제로 시작되지 않으면 안내
+  clearTimeout(startWatch);
+  startWatch=setTimeout(()=>{ if(listening && !recStartedOK){ stopMic(); showRecErr('녹음이 시작되지 않았어요. 마이크 권한이나 받아쓰기 설정이 막혀 있을 수 있어요. 아래 마이크 테스트로 원인을 확인해 보세요.'); } },4000);
 }
 function runRecog(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recog=new SR(); recog.lang='ko-KR'; recog.continuous=true; recog.interimResults=true;
-  savedIdx=new Set(); lastInterim='';
+  recog=new SR(); recog.lang='ko-KR';
+  // 아이폰·아이패드는 continuous 모드가 불안정해서 한 문장씩 듣고 자동으로 다시 시작
+  recog.continuous=!IS_IOS; recog.interimResults=true; recog.maxAlternatives=1;
+  savedIdx=new Set(); lastInterim=''; gotResult=false; recBegan=Date.now();
+  recog.onstart = ()=>{ recStartedOK=true; };
+  recog.onaudiostart = ()=>{ recStartedOK=true; };
   recog.onresult = e=>{
+    gotResult=true; quickFails=0;
     let interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const r=e.results[i];
@@ -2832,19 +2934,24 @@ function runRecog(){
     lastInterim=interim; $('interim').textContent=interim;
   };
   recog.onerror = e=>{
-    if(e.error==='not-allowed' || e.error==='service-not-allowed'){ toast('마이크 사용을 허용해 주세요. (설정 › Safari › 마이크)',4000); stopMic(); }
+    if(FATAL_SPEECH.includes(e.error)){ stopMic(); showRecErr(speechErrorHelp(e.error)); }
+    else if(e.error==='network'){ toast('⚠️ '+speechErrorHelp('network').replace(/<[^>]+>/g,''),4000); }
   };
   recog.onend = ()=>{
     if(lastInterim.trim()){ saveVoice(lastInterim); lastInterim=''; }
     $('interim').textContent='';
+    if(!listening) return;
+    // 아무 결과 없이 금방 끝나는 일이 계속되면 멈추고 안내 (무한 반복 방지)
+    if(!gotResult && Date.now()-recBegan < 1500){ quickFails++; } else if(gotResult) quickFails=0;
+    if(quickFails>=5){ stopMic(); showRecErr('녹음이 자꾸 바로 끊겨요. 마이크 테스트로 원인을 확인해 보세요.'); return; }
     // 말이 잠깐 끊겨도 자동으로 다시 듣기 → 정지 버튼을 누를 때까지 계속 기록
-    if(listening) setTimeout(()=>{ if(listening){ try{ runRecog(); }catch(err){} } },250);
+    setTimeout(()=>{ if(listening){ try{ runRecog(); }catch(err){} } }, 200);
   };
-  try{ recog.start(); }catch(err){}
+  try{ recog.start(); }catch(err){ /* 이미 시작된 경우 무시 */ }
 }
 function stopMic(){
   const wasOn = listening;
-  listening=false;
+  listening=false; clearTimeout(startWatch);
   if(recog){ try{recog.stop();}catch(e){} }
   if(wasOn){ timerAcc += Date.now()-timerStart; }
   clearInterval(timerInt); updateTimer();
@@ -3043,6 +3150,98 @@ function downloadGroup(g){
   downloadText(`${g}모둠_회의기록.txt`, txt);
 }
 
+/* ================= 🔧 마이크 테스트 ================= */
+let testStream=null, testAC=null, testRAF=0, testRecog=null, testFrom='home';
+function openMicTest(){
+  testFrom = !$('voice').classList.contains('hidden') ? 'voice' : 'home';
+  if(listening) stopMic();
+  show('mictest'); runEnvChecks();
+}
+function closeMicTest(){
+  stopLevel(); stopSpeechTest();
+  if(testFrom==='voice'){ show('voice'); } else goHome();
+}
+function setStep(id, state, html){
+  const el=$(id); el.className='tstep '+state;
+  el.querySelector('.ico').textContent = state==='ok'?'✅':state==='bad'?'❌':state==='warn'?'⚠️':state==='run'?'⏳':'⬜';
+  if(html!==undefined) el.querySelector('.msg').innerHTML=html;
+}
+async function runEnvChecks(){
+  // 1. 브라우저/주소
+  const prob = (location.protocol==='file:'||!window.isSecureContext||inAppName()) ? envProblem() : '';
+  setStep('t1', prob?'bad':'ok', prob || `${browserName()}로 안전한 주소(https)에서 열려 있어요.`);
+  // 2. 음성 인식 기능
+  const hasSR=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  setStep('t2', hasSR?'ok':'bad', hasSR ? '이 브라우저는 음성 인식 기능이 있어요.' : `지금 브라우저(${browserName()})에는 음성 인식 기능이 없어요. ${SAFARI_TIP}`);
+  setStep('t3','idle','아래 버튼을 누르면 마이크 허용 창이 떠요. <b>허용</b>을 누르고 말해 보세요.');
+  setStep('t4','idle','버튼을 누르고 “안녕하세요, 마이크 테스트입니다”라고 말해 보세요.');
+  // 5. 서버 연결
+  setStep('t5','run','확인하는 중…');
+  try{
+    const r=await fetch(dbUrl('ping'),{method:'PUT',body:JSON.stringify({t:{'.sv':'timestamp'}})});
+    if(!r.ok) throw new Error(r.status);
+    setStep('t5','ok','실시간 기록 서버에 연결됐어요. 기록이 선생님 화면에 보여요.');
+  }catch(e){
+    setStep('t5','bad','기록 서버에 연결하지 못했어요. 와이파이를 확인하고, 그래도 안 되면 선생님께 알려 주세요. (Firebase 규칙이나 학교 인터넷 차단 문제일 수 있어요)');
+  }
+}
+async function testLevel(){
+  stopLevel();
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    setStep('t3','bad','이 브라우저에서는 마이크를 쓸 수 없어요. '+SAFARI_TIP); return;
+  }
+  setStep('t3','run','마이크 허용 창이 뜨면 <b>허용</b>을 눌러 주세요…');
+  try{
+    testStream = await navigator.mediaDevices.getUserMedia({audio:true});
+  }catch(e){
+    const n=e && e.name;
+    if(n==='NotAllowedError'||n==='SecurityError') setStep('t3','bad', speechErrorHelp('not-allowed'));
+    else if(n==='NotFoundError'||n==='NotReadableError') setStep('t3','bad', speechErrorHelp('audio-capture'));
+    else setStep('t3','bad','마이크를 켜지 못했어요. ('+(n||e)+')');
+    return;
+  }
+  setStep('t3','run','말해 보세요! 막대가 움직이면 마이크가 잘 되는 거예요. <div class="meter"><div id="meterBar"></div></div>');
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; testAC=new AC();
+    const src=testAC.createMediaStreamSource(testStream), an=testAC.createAnalyser(); an.fftSize=512; src.connect(an);
+    const buf=new Uint8Array(an.fftSize); let peak=0; const t0=Date.now();
+    const loop=()=>{
+      an.getByteTimeDomainData(buf); let m=0; for(const v of buf) m=Math.max(m,Math.abs(v-128));
+      const lv=Math.min(100,m/64*100); peak=Math.max(peak,lv);
+      const bar=$('meterBar'); if(bar) bar.style.width=lv+'%';
+      if(Date.now()-t0<6000) testRAF=requestAnimationFrame(loop);
+      else { stopLevel(); setStep('t3', peak>8?'ok':'warn', peak>8 ? '마이크가 소리를 잘 듣고 있어요.' : '마이크는 켜졌는데 소리가 거의 안 들렸어요. 마이크를 가리고 있지 않은지, 이어폰이 꽂혀 있지 않은지 확인하고 다시 해 보세요.'); }
+    };
+    loop();
+  }catch(e){ stopLevel(); setStep('t3','ok','마이크 허용이 됐어요.'); }
+}
+function stopLevel(){
+  cancelAnimationFrame(testRAF);
+  if(testStream){ testStream.getTracks().forEach(t=>t.stop()); testStream=null; }
+  if(testAC){ try{testAC.close();}catch(e){} testAC=null; }
+}
+function testSpeech(){
+  stopLevel(); stopSpeechTest();
+  const prob=envProblem();
+  if(prob){ setStep('t4','bad',prob); return; }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  testRecog=new SR(); testRecog.lang='ko-KR'; testRecog.continuous=false; testRecog.interimResults=true;
+  let heard='', started=false;
+  setStep('t4','run','준비 중… 허용 창이 뜨면 <b>허용</b>을 눌러 주세요.');
+  testRecog.onstart=()=>{ started=true; setStep('t4','run','🎙️ 지금 말해 보세요! <div class="heard" id="heard"></div>'); };
+  testRecog.onresult=e=>{ heard=Array.from(e.results).map(r=>r[0].transcript).join(''); const h=$('heard'); if(h) h.textContent=heard; };
+  testRecog.onerror=e=>{ setStep('t4','bad', speechErrorHelp(e.error)); heard='__err'; };
+  testRecog.onend=()=>{
+    if(heard==='__err') return;
+    if(heard.trim()) setStep('t4','ok',`음성 인식 성공! 이렇게 들었어요: <b>“${esc(heard)}”</b><br>이제 녹음 기능을 쓸 수 있어요.`);
+    else if(started) setStep('t4','warn','마이크는 켜졌는데 말을 알아듣지 못했어요. 조금 더 크게, 또박또박 다시 말해 보세요.');
+    else setStep('t4','bad','음성 인식이 시작되지 않았어요. '+speechErrorHelp(IS_IOS?'service-not-allowed':'not-allowed'));
+  };
+  setTimeout(()=>{ if(testRecog && !started){ try{testRecog.abort();}catch(e){} } },5000);
+  try{ testRecog.start(); }catch(e){ setStep('t4','bad','음성 인식을 시작하지 못했어요. ('+e.message+')'); }
+}
+function stopSpeechTest(){ if(testRecog){ try{testRecog.abort();}catch(e){} testRecog=null; } }
+
 /* ---- QR ---- */
 function qrSvg(text){ const q=qrcode(0,'M'); q.addData(text); q.make(); return q.createSvgTag({cellSize:8, margin:2, scalable:true}); }
 function openQR(kind){
@@ -3061,7 +3260,8 @@ function closeQR(){ $('qrModal').classList.add('hidden'); }
 /* 시작 */
 renderGroupGrids();
 startConfig();
-if(location.hash==='#chat') openChatSetup();
+if(location.hash==='#test') openMicTest();
+else if(location.hash==='#chat') openChatSetup();
 else if(location.hash==='#voice') openVoiceSetup();
 </script>
 </body>
