@@ -70,23 +70,17 @@ input,textarea,select{font-family:inherit}
 .qr-modal{background:var(--bg);border-radius:22px;padding:22px;width:100%;max-width:620px;max-height:94vh;overflow:auto;text-align:center}
 .qr-modal h3{font-family:'Jua';font-weight:400;font-size:30px;margin-bottom:10px}
 .rec-err{background:#fff3f3;border:2px solid #f5a3a6;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.6;text-align:left;max-width:640px}
-.test-main{max-width:720px;width:100%;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:12px}
-.test-intro{font-size:16px;color:var(--sub)}
-.tstep{background:#fff;border-radius:16px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;border:2px solid transparent}
-.tstep .ico{font-size:24px;line-height:1.2}
-.tstep>div{flex:1}
-.tstep b{font-size:17px}
-.tstep .msg{font-size:15px;line-height:1.6;color:var(--ink);margin:4px 0 8px}
-.tstep.ok{border-color:#7fd3a8} .tstep.bad{border-color:#f5a3a6;background:#fffafa} .tstep.warn{border-color:#ffd24a}
-.tstep .tool{font-size:15px;padding:8px 14px}
-.tool.primary{background:var(--voice);border-color:var(--voice);color:#fff}
-.meter{height:16px;background:#eee;border-radius:99px;overflow:hidden;margin-top:6px}
-#meterBar{height:100%;width:0;background:linear-gradient(90deg,#22a06b,#ffd24a,#e5484d);transition:width .05s}
-.heard{margin-top:6px;font-size:20px;font-weight:700;min-height:28px;color:var(--voice)}
-.tlog{margin-top:8px;font-size:13px;color:var(--sub)}
-.tlog pre{white-space:pre-wrap;background:#f4f4f4;border-radius:10px;padding:8px;margin-top:4px;font-size:12px;max-height:200px;overflow:auto}
-.retry{margin-top:8px}
-.test-tip{background:#fffbe6;border-radius:14px;padding:12px 14px;font-size:15px}
+.t-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:30px 20px;text-align:center}
+.mic-big{width:170px;height:170px;border-radius:50%;background:var(--voice);color:#fff;font-size:76px;box-shadow:0 8px 0 #d4572a;position:relative}
+.mic-big.on{background:var(--danger);box-shadow:0 8px 0 #b4232a}
+.mic-big.on::after{content:'';position:absolute;inset:-12px;border-radius:50%;border:5px solid var(--danger);animation:pulse 1.4s infinite}
+@keyframes pulse{0%{transform:scale(.9);opacity:1}100%{transform:scale(1.25);opacity:0}}
+.t-state{font-family:'Jua';font-size:24px}
+.t-heard{font-size:34px;font-weight:700;color:var(--voice);min-height:44px}
+.t-result{max-width:560px;border-radius:16px;padding:14px 18px;font-size:17px;line-height:1.6}
+.t-result.ok{background:#e6f7ee;color:#167a4e;font-weight:700}
+.t-result.bad{background:#fff3f3;border:2px solid #f5a3a6;text-align:left}
+.ecode{font-size:12px;color:var(--sub)}
 .gtopic{background:#fffbe6;border-radius:10px;padding:6px 10px;font-size:14px;font-weight:700;display:flex;gap:6px;align-items:center}
 .gtopic span{flex:1}
 #cfgBank{width:100%;min-height:150px;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font-size:15px;line-height:1.6}
@@ -267,14 +261,11 @@ input,textarea,select{font-family:inherit}
 <!-- ================= 마이크 테스트 ================= -->
 <section id="mictest" class="screen hidden">
   <div class="topbar"><button class="back" onclick="closeMicTest()">← 돌아가기</button><div class="t">🔧 마이크 테스트</div></div>
-  <div class="test-main">
-    <p class="test-intro">말로만 모둠회의를 하기 전에 이 기기에서 녹음이 잘 되는지 차례대로 확인해요.</p>
-    <div class="tstep" id="t1"><span class="ico">⬜</span><div><b>1. 브라우저 확인</b><div class="msg"></div></div></div>
-    <div class="tstep" id="t2"><span class="ico">⬜</span><div><b>2. 음성 인식 기능</b><div class="msg"></div></div></div>
-    <div class="tstep" id="t3"><span class="ico">⬜</span><div><b>3. 마이크 소리 듣기</b><div class="msg"></div><button class="tool primary" onclick="testLevel()">🎙️ 마이크 확인하기</button></div></div>
-    <div class="tstep" id="t4"><span class="ico">⬜</span><div><b>4. 말을 글자로 바꾸기</b><div class="msg"></div><button class="tool primary" onclick="testSpeech(0)">🗣️ 음성 인식 확인하기</button></div></div>
-    <div class="tstep" id="t5"><span class="ico">⬜</span><div><b>5. 기록 서버 연결</b><div class="msg"></div></div></div>
-    <div class="test-tip">💡 모두 ✅면 준비 끝! ❌가 있으면 그 칸의 안내를 따라 고친 뒤 <b>새로고침</b>해서 다시 확인해요.</div>
+  <div class="t-main">
+    <button class="mic-big" id="tBtn" onclick="testSpeech()">🎙️</button>
+    <div class="t-state" id="tState"></div>
+    <div class="t-heard" id="tHeard"></div>
+    <div class="t-result hidden" id="tResult"></div>
   </div>
 </section>
 
@@ -3153,132 +3144,49 @@ function downloadGroup(g){
   downloadText(`${g}모둠_회의기록.txt`, txt);
 }
 
-/* ================= 🔧 마이크 테스트 ================= */
-let testStream=null, testAC=null, testRAF=0, testRecog=null, testFrom='home';
+/* ================= 🔧 마이크 테스트 (간단) ================= */
+let testRecog=null, testFrom='home';
 function openMicTest(){
   testFrom = !$('voice').classList.contains('hidden') ? 'voice' : 'home';
   if(listening) stopMic();
-  show('mictest'); runEnvChecks();
+  show('mictest'); resetMicTest();
 }
-function closeMicTest(){
-  stopLevel(); stopSpeechTest();
-  if(testFrom==='voice'){ show('voice'); } else goHome();
+function closeMicTest(){ stopSpeechTest(); if(testFrom==='voice') show('voice'); else goHome(); }
+function resetMicTest(){
+  $('tBtn').classList.remove('on'); $('tBtn').disabled=false;
+  $('tState').textContent='마이크 버튼을 누르고 “안녕하세요”라고 말해 보세요';
+  $('tHeard').textContent=''; $('tResult').className='t-result hidden'; $('tResult').innerHTML='';
 }
-function setStep(id, state, html){
-  const el=$(id); el.className='tstep '+state;
-  el.querySelector('.ico').textContent = state==='ok'?'✅':state==='bad'?'❌':state==='warn'?'⚠️':state==='run'?'⏳':'⬜';
-  if(html!==undefined) el.querySelector('.msg').innerHTML=html;
+function testResult(ok, html){
+  $('tBtn').classList.remove('on'); $('tBtn').disabled=false;
+  $('tState').textContent = ok ? '' : '다시 해 보려면 마이크 버튼을 눌러요';
+  $('tResult').className='t-result '+(ok?'ok':'bad'); $('tResult').innerHTML=html;
 }
-async function runEnvChecks(){
-  // 1. 브라우저/주소
-  const prob = (location.protocol==='file:'||!window.isSecureContext||inAppName()) ? envProblem() : '';
-  setStep('t1', prob?'bad':'ok', prob || `${browserName()}로 안전한 주소(https)에서 열려 있어요.`);
-  // 2. 음성 인식 기능
-  const hasSR=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
-  setStep('t2', hasSR?'ok':'bad', hasSR ? '이 브라우저는 음성 인식 기능이 있어요.' : `지금 브라우저(${browserName()})에는 음성 인식 기능이 없어요. ${SAFARI_TIP}`);
-  setStep('t3','idle','아래 버튼을 누르면 마이크 허용 창이 떠요. <b>허용</b>을 누르고 말해 보세요.');
-  setStep('t4','idle','버튼을 누르고 “안녕하세요, 마이크 테스트입니다”라고 말해 보세요.');
-  // 5. 서버 연결
-  setStep('t5','run','확인하는 중…');
-  try{
-    const r=await fetch(dbUrl('ping'),{method:'PUT',body:JSON.stringify({t:{'.sv':'timestamp'}})});
-    if(!r.ok) throw new Error(r.status);
-    setStep('t5','ok','실시간 기록 서버에 연결됐어요. 기록이 선생님 화면에 보여요.');
-  }catch(e){
-    setStep('t5','bad','기록 서버에 연결하지 못했어요. 와이파이를 확인하고, 그래도 안 되면 선생님께 알려 주세요. (Firebase 규칙이나 학교 인터넷 차단 문제일 수 있어요)');
-  }
-}
-async function testLevel(){
-  stopLevel();
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    setStep('t3','bad','이 브라우저에서는 마이크를 쓸 수 없어요. '+SAFARI_TIP); return;
-  }
-  setStep('t3','run','마이크 허용 창이 뜨면 <b>허용</b>을 눌러 주세요…');
-  try{
-    testStream = await navigator.mediaDevices.getUserMedia({audio:true});
-  }catch(e){
-    const n=e && e.name;
-    if(n==='NotAllowedError'||n==='SecurityError') setStep('t3','bad', speechErrorHelp('not-allowed'));
-    else if(n==='NotFoundError'||n==='NotReadableError') setStep('t3','bad', speechErrorHelp('audio-capture'));
-    else setStep('t3','bad','마이크를 켜지 못했어요. ('+(n||e)+')');
-    return;
-  }
-  setStep('t3','run','말해 보세요! 막대가 움직이면 마이크가 잘 되는 거예요. <div class="meter"><div id="meterBar"></div></div>');
-  try{
-    const AC=window.AudioContext||window.webkitAudioContext; testAC=new AC();
-    const src=testAC.createMediaStreamSource(testStream), an=testAC.createAnalyser(); an.fftSize=512; src.connect(an);
-    const buf=new Uint8Array(an.fftSize); let peak=0; const t0=Date.now();
-    const loop=()=>{
-      an.getByteTimeDomainData(buf); let m=0; for(const v of buf) m=Math.max(m,Math.abs(v-128));
-      const lv=Math.min(100,m/64*100); peak=Math.max(peak,lv);
-      const bar=$('meterBar'); if(bar) bar.style.width=lv+'%';
-      if(Date.now()-t0<6000) testRAF=requestAnimationFrame(loop);
-      else { stopLevel(); setStep('t3', peak>8?'ok':'warn', peak>8 ? '마이크가 소리를 잘 듣고 있어요.' : '마이크는 켜졌는데 소리가 거의 안 들렸어요. 마이크를 가리고 있지 않은지, 이어폰이 꽂혀 있지 않은지 확인하고 다시 해 보세요.'); }
-    };
-    loop();
-  }catch(e){ stopLevel(); setStep('t3','ok','마이크 허용이 됐어요.'); }
-}
-function stopLevel(){
-  cancelAnimationFrame(testRAF);
-  if(testStream){ testStream.getTracks().forEach(t=>t.stop()); testStream=null; }
-  if(testAC){ try{testAC.close();}catch(e){} testAC=null; }
-}
-let testMode=0, testLog=[], testT0=0;
-function tlog(msg){ testLog.push(`${((Date.now()-testT0)/1000).toFixed(1)}초 · ${msg}`); const el=$('tlogBox'); if(el) el.textContent=testLog.join('\n'); }
-function testSpeech(mode){
-  testMode = mode||0;
-  // 마이크 확인(3번)에서 켠 마이크를 먼저 완전히 끔 (아이폰은 마이크를 동시에 두 곳에서 못 씀)
-  stopLevel(); stopSpeechTest();
+function testSpeech(){
+  stopSpeechTest();
+  resetMicTest();
   const prob=envProblem();
-  if(prob){ setStep('t4','bad',prob); return; }
+  if(prob){ testResult(false,'❌ '+prob); return; }
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  testLog=[]; testT0=Date.now();
   const r=new SR(); testRecog=r;
-  r.lang='ko-KR';
-  r.continuous = testMode===1;          // 0: 한 문장 방식, 1: 계속 듣기 방식
-  r.interimResults = testMode!==2;      // 2: 중간 결과 없이
-  let heard='', started=false, errored='';
-  const logBox='<details class="tlog"><summary>자세한 기록 보기</summary><pre id="tlogBox"></pre></details>';
-  const retryBtns=`<div class="retry"><button class="tool" onclick="testSpeech(${(testMode+1)%3})">🔁 다른 방식으로 다시 해 보기</button></div>`;
-  setStep('t4','run','준비 중… 허용 창이 뜨면 <b>허용</b>을 눌러 주세요. (아이폰은 허용 창이 두 번 뜰 수 있어요)'+logBox);
-  tlog(`시작 (방식 ${testMode+1}, ${browserName()}, ${IS_IOS?'iOS':'기타'})`);
-  r.onstart=()=>{ started=true; tlog('onstart: 듣기 시작'); setStep('t4','run','🎙️ 지금 말해 보세요! “안녕하세요, 마이크 테스트입니다” <div class="heard" id="heard"></div>'+logBox); $('tlogBox').textContent=testLog.join('\n'); };
-  r.onaudiostart=()=>tlog('onaudiostart: 마이크 소리 받는 중');
-  r.onsoundstart=()=>tlog('onsoundstart: 소리 감지');
-  r.onspeechstart=()=>tlog('onspeechstart: 말소리 감지');
-  r.onresult=e=>{
-    heard=Array.from(e.results).map(x=>x[0].transcript).join('');
-    tlog('onresult: '+heard);
-    const h=$('heard'); if(h) h.textContent=heard;
-    if(testMode===1 && Array.from(e.results).some(x=>x.isFinal)){ try{r.stop();}catch(_){} }
-  };
-  r.onnomatch=()=>tlog('onnomatch: 알아듣지 못함');
-  r.onerror=e=>{ errored=e.error||'unknown'; tlog('onerror: '+errored+(e.message?' / '+e.message:'')); };
+  r.lang='ko-KR'; r.continuous=false; r.interimResults=true;
+  let heard='', err='', started=false;
+  $('tBtn').classList.add('on'); $('tBtn').disabled=true;
+  $('tState').textContent='허용 창이 뜨면 [허용]을 눌러 주세요';
+  r.onstart=()=>{ started=true; $('tState').textContent='🎙️ 듣고 있어요… “안녕하세요”'; };
+  r.onresult=e=>{ heard=Array.from(e.results).map(x=>x[0].transcript).join(''); $('tHeard').textContent=heard; };
+  r.onerror=e=>{ err=e.error||''; };
   r.onend=()=>{
-    tlog('onend: 끝');
-    if(testRecog!==r) return;
-    testRecog=null;
-    if(heard.trim()){
-      setStep('t4','ok',`음성 인식 성공! 이렇게 들었어요: <b>“${esc(heard)}”</b><br>이제 녹음 기능을 쓸 수 있어요.`+logBox);
-    } else if(errored && errored!=='no-speech' && errored!=='aborted'){
-      setStep('t4','bad', speechErrorHelp(errored)+retryBtns+logBox);
-    } else if(started){
-      setStep('t4','warn','듣기는 시작됐는데 말을 글자로 바꾸지 못했어요. 조금 더 크게, 또박또박 다시 말해 보세요.'+
-        (IS_IOS?'<br>그래도 안 되면 설정 › 일반 › 키보드 › <b>받아쓰기 언어</b>에 <b>한국어</b>가 체크되어 있는지 확인해 주세요. (키보드 목록에 한국어 키보드가 있어야 해요)':'')+retryBtns+logBox);
-    } else {
-      setStep('t4','bad','음성 인식이 시작되지 않았어요.'+(errored?' ('+errored+')':'')+
-        (IS_IOS?'<br>① 설정 › Siri에서 Siri가 켜져 있는지 ② 설정 › 일반 › 키보드 › 받아쓰기 언어에 한국어가 있는지 ③ 사파리 주소창 <b>가가</b> 버튼 › 웹 사이트 설정 › 마이크가 <b>허용</b>인지 확인해 주세요.':' 마이크 권한을 허용했는지 확인해 주세요.')+retryBtns+logBox);
-    }
-    $('tlogBox').textContent=testLog.join('\n');
+    if(testRecog!==r) return; testRecog=null;
+    if(heard.trim()) testResult(true,'✅ 성공! 받아쓰기가 잘 돼요. 이제 말로만 모둠회의를 할 수 있어요.');
+    else if(err && err!=='no-speech' && err!=='aborted') testResult(false,'❌ '+speechErrorHelp(err)+` <span class="ecode">(${esc(err)})</span>`);
+    else if(started) testResult(false,'❌ 말소리를 알아듣지 못했어요. 마이크 가까이에서 조금 더 크게 다시 말해 보세요.');
+    else testResult(false,'❌ 듣기가 시작되지 않았어요. 사파리 주소창의 <b>가가</b> 버튼 › 웹 사이트 설정 › 마이크를 <b>허용</b>으로 바꾸고 새로고침해 주세요.');
   };
-  // 허용 창에 답할 시간을 넉넉히 줌 (20초)
-  setTimeout(()=>{ if(testRecog===r && !started){ tlog('20초 동안 시작되지 않아 멈춤'); try{r.abort();}catch(_){} } },20000);
-  // 오래(30초) 아무 결과가 없으면 정리
-  setTimeout(()=>{ if(testRecog===r && started && !heard){ tlog('30초 넘게 결과 없음'); try{r.stop();}catch(_){} } },30000);
-  try{ r.start(); tlog('start() 호출함'); }
-  catch(e){ tlog('start() 실패: '+e.message); setStep('t4','bad','음성 인식을 시작하지 못했어요. ('+e.message+')'+retryBtns+logBox); $('tlogBox').textContent=testLog.join('\n'); }
+  setTimeout(()=>{ if(testRecog===r){ try{r.stop();}catch(_){} } },25000);
+  try{ r.start(); }catch(e){ testRecog=null; testResult(false,'❌ 음성 인식을 시작하지 못했어요. 새로고침 후 다시 해 보세요.'); }
 }
-function stopSpeechTest(){ if(testRecog){ try{testRecog.abort();}catch(e){} testRecog=null; } }
+function stopSpeechTest(){ if(testRecog){ const r=testRecog; testRecog=null; try{r.abort();}catch(e){} } }
 
 /* ---- QR ---- */
 function qrSvg(text){ const q=qrcode(0,'M'); q.addData(text); q.make(); return q.createSvgTag({cellSize:8, margin:2, scalable:true}); }
