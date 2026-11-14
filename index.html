@@ -83,6 +83,9 @@ input,textarea,select{font-family:inherit}
 .meter{height:16px;background:#eee;border-radius:99px;overflow:hidden;margin-top:6px}
 #meterBar{height:100%;width:0;background:linear-gradient(90deg,#22a06b,#ffd24a,#e5484d);transition:width .05s}
 .heard{margin-top:6px;font-size:20px;font-weight:700;min-height:28px;color:var(--voice)}
+.tlog{margin-top:8px;font-size:13px;color:var(--sub)}
+.tlog pre{white-space:pre-wrap;background:#f4f4f4;border-radius:10px;padding:8px;margin-top:4px;font-size:12px;max-height:200px;overflow:auto}
+.retry{margin-top:8px}
 .test-tip{background:#fffbe6;border-radius:14px;padding:12px 14px;font-size:15px}
 .gtopic{background:#fffbe6;border-radius:10px;padding:6px 10px;font-size:14px;font-weight:700;display:flex;gap:6px;align-items:center}
 .gtopic span{flex:1}
@@ -269,7 +272,7 @@ input,textarea,select{font-family:inherit}
     <div class="tstep" id="t1"><span class="ico">⬜</span><div><b>1. 브라우저 확인</b><div class="msg"></div></div></div>
     <div class="tstep" id="t2"><span class="ico">⬜</span><div><b>2. 음성 인식 기능</b><div class="msg"></div></div></div>
     <div class="tstep" id="t3"><span class="ico">⬜</span><div><b>3. 마이크 소리 듣기</b><div class="msg"></div><button class="tool primary" onclick="testLevel()">🎙️ 마이크 확인하기</button></div></div>
-    <div class="tstep" id="t4"><span class="ico">⬜</span><div><b>4. 말을 글자로 바꾸기</b><div class="msg"></div><button class="tool primary" onclick="testSpeech()">🗣️ 음성 인식 확인하기</button></div></div>
+    <div class="tstep" id="t4"><span class="ico">⬜</span><div><b>4. 말을 글자로 바꾸기</b><div class="msg"></div><button class="tool primary" onclick="testSpeech(0)">🗣️ 음성 인식 확인하기</button></div></div>
     <div class="tstep" id="t5"><span class="ico">⬜</span><div><b>5. 기록 서버 연결</b><div class="msg"></div></div></div>
     <div class="test-tip">💡 모두 ✅면 준비 끝! ❌가 있으면 그 칸의 안내를 따라 고친 뒤 <b>새로고침</b>해서 다시 확인해요.</div>
   </div>
@@ -2911,9 +2914,9 @@ function startMic(){
   timerStart=Date.now(); clearInterval(timerInt); timerInt=setInterval(updateTimer,500);
   runRecog(); setRecUI(true);
   clearInterval(statusTimer); statusTimer=setInterval(()=>sendStatus(false),700); sendStatus(true);
-  // 4초 안에 녹음이 실제로 시작되지 않으면 안내
+  // 15초 안에 녹음이 실제로 시작되지 않으면 안내
   clearTimeout(startWatch);
-  startWatch=setTimeout(()=>{ if(listening && !recStartedOK){ stopMic(); showRecErr('녹음이 시작되지 않았어요. 마이크 권한이나 받아쓰기 설정이 막혀 있을 수 있어요. 아래 마이크 테스트로 원인을 확인해 보세요.'); } },4000);
+  startWatch=setTimeout(()=>{ if(listening && !recStartedOK){ stopMic(); showRecErr('녹음이 시작되지 않았어요. 마이크 권한이나 받아쓰기 설정이 막혀 있을 수 있어요. 아래 마이크 테스트로 원인을 확인해 보세요.'); } },15000);
 }
 function runRecog(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -3220,25 +3223,60 @@ function stopLevel(){
   if(testStream){ testStream.getTracks().forEach(t=>t.stop()); testStream=null; }
   if(testAC){ try{testAC.close();}catch(e){} testAC=null; }
 }
-function testSpeech(){
+let testMode=0, testLog=[], testT0=0;
+function tlog(msg){ testLog.push(`${((Date.now()-testT0)/1000).toFixed(1)}초 · ${msg}`); const el=$('tlogBox'); if(el) el.textContent=testLog.join('\n'); }
+function testSpeech(mode){
+  testMode = mode||0;
+  // 마이크 확인(3번)에서 켠 마이크를 먼저 완전히 끔 (아이폰은 마이크를 동시에 두 곳에서 못 씀)
   stopLevel(); stopSpeechTest();
   const prob=envProblem();
   if(prob){ setStep('t4','bad',prob); return; }
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  testRecog=new SR(); testRecog.lang='ko-KR'; testRecog.continuous=false; testRecog.interimResults=true;
-  let heard='', started=false;
-  setStep('t4','run','준비 중… 허용 창이 뜨면 <b>허용</b>을 눌러 주세요.');
-  testRecog.onstart=()=>{ started=true; setStep('t4','run','🎙️ 지금 말해 보세요! <div class="heard" id="heard"></div>'); };
-  testRecog.onresult=e=>{ heard=Array.from(e.results).map(r=>r[0].transcript).join(''); const h=$('heard'); if(h) h.textContent=heard; };
-  testRecog.onerror=e=>{ setStep('t4','bad', speechErrorHelp(e.error)); heard='__err'; };
-  testRecog.onend=()=>{
-    if(heard==='__err') return;
-    if(heard.trim()) setStep('t4','ok',`음성 인식 성공! 이렇게 들었어요: <b>“${esc(heard)}”</b><br>이제 녹음 기능을 쓸 수 있어요.`);
-    else if(started) setStep('t4','warn','마이크는 켜졌는데 말을 알아듣지 못했어요. 조금 더 크게, 또박또박 다시 말해 보세요.');
-    else setStep('t4','bad','음성 인식이 시작되지 않았어요. '+speechErrorHelp(IS_IOS?'service-not-allowed':'not-allowed'));
+  testLog=[]; testT0=Date.now();
+  const r=new SR(); testRecog=r;
+  r.lang='ko-KR';
+  r.continuous = testMode===1;          // 0: 한 문장 방식, 1: 계속 듣기 방식
+  r.interimResults = testMode!==2;      // 2: 중간 결과 없이
+  let heard='', started=false, errored='';
+  const logBox='<details class="tlog"><summary>자세한 기록 보기</summary><pre id="tlogBox"></pre></details>';
+  const retryBtns=`<div class="retry"><button class="tool" onclick="testSpeech(${(testMode+1)%3})">🔁 다른 방식으로 다시 해 보기</button></div>`;
+  setStep('t4','run','준비 중… 허용 창이 뜨면 <b>허용</b>을 눌러 주세요. (아이폰은 허용 창이 두 번 뜰 수 있어요)'+logBox);
+  tlog(`시작 (방식 ${testMode+1}, ${browserName()}, ${IS_IOS?'iOS':'기타'})`);
+  r.onstart=()=>{ started=true; tlog('onstart: 듣기 시작'); setStep('t4','run','🎙️ 지금 말해 보세요! “안녕하세요, 마이크 테스트입니다” <div class="heard" id="heard"></div>'+logBox); $('tlogBox').textContent=testLog.join('\n'); };
+  r.onaudiostart=()=>tlog('onaudiostart: 마이크 소리 받는 중');
+  r.onsoundstart=()=>tlog('onsoundstart: 소리 감지');
+  r.onspeechstart=()=>tlog('onspeechstart: 말소리 감지');
+  r.onresult=e=>{
+    heard=Array.from(e.results).map(x=>x[0].transcript).join('');
+    tlog('onresult: '+heard);
+    const h=$('heard'); if(h) h.textContent=heard;
+    if(testMode===1 && Array.from(e.results).some(x=>x.isFinal)){ try{r.stop();}catch(_){} }
   };
-  setTimeout(()=>{ if(testRecog && !started){ try{testRecog.abort();}catch(e){} } },5000);
-  try{ testRecog.start(); }catch(e){ setStep('t4','bad','음성 인식을 시작하지 못했어요. ('+e.message+')'); }
+  r.onnomatch=()=>tlog('onnomatch: 알아듣지 못함');
+  r.onerror=e=>{ errored=e.error||'unknown'; tlog('onerror: '+errored+(e.message?' / '+e.message:'')); };
+  r.onend=()=>{
+    tlog('onend: 끝');
+    if(testRecog!==r) return;
+    testRecog=null;
+    if(heard.trim()){
+      setStep('t4','ok',`음성 인식 성공! 이렇게 들었어요: <b>“${esc(heard)}”</b><br>이제 녹음 기능을 쓸 수 있어요.`+logBox);
+    } else if(errored && errored!=='no-speech' && errored!=='aborted'){
+      setStep('t4','bad', speechErrorHelp(errored)+retryBtns+logBox);
+    } else if(started){
+      setStep('t4','warn','듣기는 시작됐는데 말을 글자로 바꾸지 못했어요. 조금 더 크게, 또박또박 다시 말해 보세요.'+
+        (IS_IOS?'<br>그래도 안 되면 설정 › 일반 › 키보드 › <b>받아쓰기 언어</b>에 <b>한국어</b>가 체크되어 있는지 확인해 주세요. (키보드 목록에 한국어 키보드가 있어야 해요)':'')+retryBtns+logBox);
+    } else {
+      setStep('t4','bad','음성 인식이 시작되지 않았어요.'+(errored?' ('+errored+')':'')+
+        (IS_IOS?'<br>① 설정 › Siri에서 Siri가 켜져 있는지 ② 설정 › 일반 › 키보드 › 받아쓰기 언어에 한국어가 있는지 ③ 사파리 주소창 <b>가가</b> 버튼 › 웹 사이트 설정 › 마이크가 <b>허용</b>인지 확인해 주세요.':' 마이크 권한을 허용했는지 확인해 주세요.')+retryBtns+logBox);
+    }
+    $('tlogBox').textContent=testLog.join('\n');
+  };
+  // 허용 창에 답할 시간을 넉넉히 줌 (20초)
+  setTimeout(()=>{ if(testRecog===r && !started){ tlog('20초 동안 시작되지 않아 멈춤'); try{r.abort();}catch(_){} } },20000);
+  // 오래(30초) 아무 결과가 없으면 정리
+  setTimeout(()=>{ if(testRecog===r && started && !heard){ tlog('30초 넘게 결과 없음'); try{r.stop();}catch(_){} } },30000);
+  try{ r.start(); tlog('start() 호출함'); }
+  catch(e){ tlog('start() 실패: '+e.message); setStep('t4','bad','음성 인식을 시작하지 못했어요. ('+e.message+')'+retryBtns+logBox); $('tlogBox').textContent=testLog.join('\n'); }
 }
 function stopSpeechTest(){ if(testRecog){ try{testRecog.abort();}catch(e){} testRecog=null; } }
 
