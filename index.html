@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>말과 글로 하는 모둠회의</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -81,6 +84,7 @@ input,textarea,select{font-family:inherit}
 .t-result.ok{background:#e6f7ee;color:#167a4e;font-weight:700}
 .t-result.bad{background:#fff3f3;border:2px solid #f5a3a6;text-align:left}
 .ecode{font-size:12px;color:var(--sub)}
+.ver{font-size:12px;color:#aaa}
 .gtopic{background:#fffbe6;border-radius:10px;padding:6px 10px;font-size:14px;font-weight:700;display:flex;gap:6px;align-items:center}
 .gtopic span{flex:1}
 #cfgBank{width:100%;min-height:150px;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font-size:15px;line-height:1.6}
@@ -200,9 +204,9 @@ input,textarea,select{font-family:inherit}
   <div class="cards">
     <button class="mode-card voice" onclick="openVoiceSetup()">
       <div class="emoji">🎤</div>
-      <span class="step">활동 1 · 모둠당 아이패드 1대</span>
+      <span class="step">활동 1 · 모둠당 디벗 1대</span>
       <h2>말로만 모둠회의</h2>
-      <p>오직 말로만 회의해요.<br>녹음을 시작하면 아이패드가 우리 말을 듣고 글자로 차곡차곡 적어 줘요.</p>
+      <p>오직 말로만 회의해요.<br>녹음을 시작하면 디벗가 우리 말을 듣고 글자로 차곡차곡 적어 줘요.</p>
     </button>
     <button class="mode-card chat" onclick="openChatSetup()">
       <div class="emoji">💬</div>
@@ -216,6 +220,7 @@ input,textarea,select{font-family:inherit}
     <button class="qr-btn" style="background:var(--chat)" onclick="openQR('chat')">📱 💬 글 회의 QR</button>
   </div>
   <div style="display:flex;gap:18px"><button class="teacher-link" onclick="openMicTest()">🔧 마이크 테스트</button><button class="teacher-link" onclick="openAdminLogin()">👩‍🏫 선생님 화면</button></div>
+  <div class="ver" id="verLabel"></div>
 </section>
 
 <!-- ================= 활동 1: 말 ================= -->
@@ -2673,6 +2678,7 @@ const DB_URL   = "https://ninja-game-56862-default-rtdb.firebaseio.com"; // Fire
 const ROOT     = "speakchat";   // 데이터베이스 안에서 이 앱이 쓰는 폴더 이름
 const ADMIN_PW = "1852";        // 선생님 화면 비밀번호
 const DEFAULT_GROUPS = 6;
+const APP_VERSION = "11.14-2"; // 파일을 고칠 때마다 이 값을 바꾸면 학생 기기도 새 버전으로 바뀌어요
 
 /* ================= 공통 도구 ================= */
 const $ = id => document.getElementById(id);
@@ -2816,7 +2822,7 @@ function browserName(){
   return '알 수 없는 브라우저';
 }
 const SAFARI_TIP = IS_IOS
-  ? '아이폰·아이패드는 꼭 <b>사파리(Safari)</b>로 열어야 해요. 주소를 복사해서 사파리 주소창에 붙여 넣거나, 기본 카메라 앱으로 QR을 찍어 주세요.'
+  ? '디벗·아이폰는 꼭 <b>사파리(Safari)</b>로 열어야 해요. 주소를 복사해서 사파리 주소창에 붙여 넣거나, 기본 카메라 앱으로 QR을 찍어 주세요.'
   : '컴퓨터는 <b>크롬(Chrome)</b>이나 <b>엣지(Edge)</b>로 열어 주세요.';
 /* 녹음 전에 막히는 원인이 있으면 안내 문구를 돌려줌 */
 function envProblem(){
@@ -2833,7 +2839,7 @@ function speechErrorHelp(code){
   switch(code){
     case 'not-allowed': return '마이크(또는 음성 인식) 사용이 막혀 있어요. '+(IS_IOS?iosPerm:pcPerm);
     case 'service-not-allowed': return IS_IOS
-      ? '아이폰·아이패드의 <b>받아쓰기</b>가 꺼져 있거나 막혀 있어요. 설정 › 일반 › 키보드 › <b>받아쓰기 활성화</b>를 켜 주세요. 설정 › 스크린 타임 › 콘텐츠 및 개인정보 보호 제한 › 허용된 앱에서 <b>Siri 및 받아쓰기</b>가 꺼져 있어도 안 돼요. 학교 디벗은 관리 설정으로 받아쓰기가 막혀 있을 수 있으니 정보 담당 선생님께 확인해 주세요.'
+      ? '디벗·아이폰의 <b>받아쓰기</b>가 꺼져 있거나 막혀 있어요. 설정 › 일반 › 키보드 › <b>받아쓰기 활성화</b>를 켜 주세요. 설정 › 스크린 타임 › 콘텐츠 및 개인정보 보호 제한 › 허용된 앱에서 <b>Siri 및 받아쓰기</b>가 꺼져 있어도 안 돼요. 학교 디벗은 관리 설정으로 받아쓰기가 막혀 있을 수 있으니 정보 담당 선생님께 확인해 주세요.'
       : '이 브라우저에서 음성 인식 서비스를 쓸 수 없어요. 크롬이나 엣지로 열어 주세요.';
     case 'audio-capture': return '마이크를 찾지 못했어요. 이어폰·블루투스 연결을 빼 보고, 다른 앱(카메라, 통화, 녹음 앱)이 마이크를 쓰고 있다면 닫아 주세요.';
     case 'network': return '음성 인식 서버에 연결하지 못했어요. 인터넷(와이파이) 연결을 확인해 주세요.';
@@ -2912,7 +2918,7 @@ function startMic(){
 function runRecog(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recog=new SR(); recog.lang='ko-KR';
-  // 아이폰·아이패드는 continuous 모드가 불안정해서 한 문장씩 듣고 자동으로 다시 시작
+  // 디벗·아이폰는 continuous 모드가 불안정해서 한 문장씩 듣고 자동으로 다시 시작
   recog.continuous=!IS_IOS; recog.interimResults=true; recog.maxAlternatives=1;
   savedIdx=new Set(); lastInterim=''; gotResult=false; recBegan=Date.now();
   recog.onstart = ()=>{ recStartedOK=true; };
@@ -3191,7 +3197,7 @@ function stopSpeechTest(){ if(testRecog){ const r=testRecog; testRecog=null; try
 /* ---- QR ---- */
 function qrSvg(text){ const q=qrcode(0,'M'); q.addData(text); q.make(); return q.createSvgTag({cellSize:8, margin:2, scalable:true}); }
 function openQR(kind){
-  const base=location.href.split('#')[0];
+  const base = location.protocol==='file:' ? location.href.split(/[?#]/)[0] : location.origin+location.pathname+'?v='+APP_VERSION;
   if(location.protocol==='file:'){ toast('지금은 컴퓨터 파일로 열려 있어요. GitHub 주소로 열어야 학생들이 QR로 들어올 수 있어요.',5000); }
   const v = kind==='voice';
   $('qrCard').className='qr-card '+kind;
@@ -3203,7 +3209,23 @@ function openQR(kind){
 }
 function closeQR(){ $('qrModal').classList.add('hidden'); }
 
+/* ---- 예전 버전이 캐시에 남아 있으면 최신 버전으로 자동 새로고침 ---- */
+(async function checkLatest(){
+  if(location.protocol==='file:') return;
+  try{
+    const r=await fetch(location.origin+location.pathname+'?nocache='+Date.now(),{cache:'no-store'});
+    const html=await r.text();
+    const m=html.match(/APP_VERSION = "([^"]+)"/);
+    if(m && m[1]!==APP_VERSION){
+      let tried=''; try{ tried=sessionStorage.getItem('sc_reload')||''; }catch(e){}
+      if(tried!==m[1]){ try{ sessionStorage.setItem('sc_reload',m[1]); }catch(e){}
+        location.replace(location.origin+location.pathname+'?v='+encodeURIComponent(m[1])+location.hash); }
+    }
+  }catch(e){}
+})();
+
 /* 시작 */
+$('verLabel').textContent='버전 '+APP_VERSION;
 renderGroupGrids();
 startConfig();
 if(location.hash==='#test') openMicTest();
