@@ -43,7 +43,24 @@ input,textarea,select{font-family:inherit}
 .topbar .t{font-family:'Jua';font-size:22px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill{padding:5px 12px;border-radius:99px;font-size:14px;font-weight:700}
 .conn{font-size:12px;color:var(--sub)} .conn.on::before{content:'● ';color:var(--ok)} .conn.off::before{content:'● ';color:var(--danger)}
-.topic{margin:12px 16px 0;background:#fffbe6;border:2px solid #ffe08a;border-radius:14px;padding:10px 14px;font-size:16px}
+.topic{margin:12px 16px 0;background:#fffbe6;border:3px solid #ffd24a;border-radius:16px;padding:12px 16px;font-size:clamp(19px,2.6vw,26px);font-weight:700;line-height:1.4}
+.topic b{display:block;font-size:15px!important}
+.sides{margin:10px 16px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.side{border-radius:16px;padding:12px 14px;text-align:center;font-family:'Jua';font-size:clamp(20px,2.6vw,28px);line-height:1.3}
+.side small{display:block;font-family:'Noto Sans KR';font-size:14px;font-weight:700;opacity:.8}
+.side.pro{background:#e6f7ee;color:#167a4e;border:3px solid #7fd3a8}
+.side.con{background:#ffecec;color:#b4232a;border:3px solid #f5a3a6}
+.num-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.num-btn{width:84px;padding:12px 0;border-radius:16px;background:#fff;border:3px solid var(--line);font-family:'Jua';font-size:22px;line-height:1.2}
+.num-btn small{display:block;font-size:14px}
+.num-btn.pro small{color:#167a4e} .num-btn.con small{color:#b4232a}
+.num-btn.sel.pro{background:#e6f7ee;border-color:#22a06b} .num-btn.sel.con{background:#ffecec;border-color:#e5484d}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;margin-left:4px;vertical-align:1px}
+.tag.pro{background:#e6f7ee;color:#167a4e} .tag.con{background:#ffecec;color:#b4232a}
+.mySide{font-size:13px;font-weight:700;padding:4px 10px;border-radius:99px}
+.gtopic{background:#fffbe6;border-radius:10px;padding:6px 10px;font-size:14px;font-weight:700;display:flex;gap:6px;align-items:center}
+.gtopic span{flex:1}
+#cfgBank{width:100%;min-height:150px;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font-size:15px;line-height:1.6}
 .topic b{font-family:'Jua';font-weight:400;color:#b7791f;margin-right:6px}
 .notice{margin:8px 16px 0;background:#ffe9ea;border-radius:12px;padding:8px 14px;font-size:15px;color:#b4232a}
 
@@ -190,8 +207,12 @@ input,textarea,select{font-family:inherit}
       <div class="t" id="voiceTitle">🎤 모둠</div>
       <span class="conn" id="voiceConn">연결 중</span>
     </div>
-    <div class="topic voiceTopic hidden"><b>회의 주제</b><span></span></div>
+    <div class="topic voiceTopic hidden"><b>🗣️ 우리 모둠 토론 주제</b><span></span></div>
     <div class="notice voiceNotice hidden"></div>
+    <div class="sides">
+      <div class="side pro"><small>👍 찬성 편</small>1번 · 3번 · 5번</div>
+      <div class="side con"><small>👎 반대 편</small>2번 · 4번 · 6번</div>
+    </div>
     <div class="voice-main">
       <div class="rec-panel">
         <div class="rec-state" id="micState"><span class="dot"></span><span id="micStateText">녹음 대기 중</span></div>
@@ -215,6 +236,8 @@ input,textarea,select{font-family:inherit}
     <div class="setup">
       <h2>우리 모둠을 골라요</h2>
       <div class="group-grid" id="chatGroupGrid"></div>
+      <h2>내 모둠 번호</h2>
+      <div class="num-grid" id="numGrid"></div>
       <h2>내 이름</h2>
       <input class="name-input" id="chatName" maxlength="10" placeholder="이름을 써요" oninput="checkChatReady()">
       <button class="go-btn" id="chatGo" disabled onclick="enterChat()">소통방 입장</button>
@@ -226,7 +249,7 @@ input,textarea,select{font-family:inherit}
       <div class="t" id="chatTitle">💬 모둠 소통방</div>
       <span class="conn" id="chatConn">연결 중</span>
     </div>
-    <div class="topic chatTopic hidden"><b>회의 주제</b><span></span></div>
+    <div class="topic chatTopic hidden"><b>🗣️ 우리 모둠 토론 주제</b><span></span></div>
     <div class="notice chatNotice hidden"></div>
     <div class="msgs" id="msgs"></div>
     <div class="composer">
@@ -246,11 +269,24 @@ input,textarea,select{font-family:inherit}
   <div class="admin-main">
     <div class="panel">
       <h3>⚙️ 수업 설정</h3>
-      <div class="row"><label>회의 주제</label><input id="cfgTopic" placeholder="예) 학급 체육대회 때 할 경기 정하기"></div>
+      <div class="row"><label>공통 주제</label><input id="cfgTopic" placeholder="모둠별 주제가 없을 때 모든 모둠에 보이는 주제 (보통은 비워 두세요)"></div>
       <div class="row"><label>공지</label><input id="cfgNotice" placeholder="모든 화면 위에 보이는 한 줄 공지 (비우면 숨김)"></div>
       <div class="row"><label>모둠 수</label><select id="cfgGroups"></select>
         <button class="btn" onclick="saveConfig()">저장하기</button>
         <button class="btn red" onclick="clearAll()">🗑 모든 기록 지우기</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>🎲 모둠별 토론 주제</h3>
+      <div class="row">
+        <button class="btn" style="font-size:17px;padding:12px 20px" onclick="assignTopics()">🎲 모둠별 주제 랜덤 배정</button>
+        <button class="btn gray" onclick="clearTopics()">배정 취소</button>
+        <button class="btn gray" onclick="$('bankBox').classList.toggle('hidden')">✏️ 주제 목록 고치기</button>
+      </div>
+      <div id="bankBox" class="hidden">
+        <p style="color:var(--sub);font-size:14px;margin-bottom:6px">한 줄에 주제 하나씩 써요. 고친 뒤 [목록 저장]을 누르면 다음 배정부터 쓰여요.</p>
+        <textarea id="cfgBank"></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn" onclick="saveBank()">목록 저장</button><button class="btn gray" onclick="resetBank()">기본 목록으로</button></div>
       </div>
     </div>
     <div class="tabs" id="adminTabs">
@@ -335,17 +371,40 @@ function setConn(el,on){ if(!el) return; el.className='conn '+(on?'on':'off'); e
 const sorted = obj => Object.entries(obj||{}).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.t||0)-(b.t||0));
 
 /* ---- 설정(회의 주제/공지/모둠 수) ---- */
+const DEFAULT_TOPICS = [
+  '초등학생의 화장을 허용해야 할까?',
+  '중학교에서 교복 대신 사복 차림을 허용해야 할까?',
+  '학교에서 쉬는 시간에 휴대전화를 자유롭게 써도 될까?',
+  '학생이 머리 염색이나 파마를 자유롭게 해도 될까?',
+  '초등학생도 귀걸이 같은 액세서리를 하고 학교에 와도 될까?',
+  '교실 자리는 학생들이 스스로 정하게 해야 할까?',
+  '학교 규칙을 정할 때 학생이 꼭 참여해야 할까?',
+  '부모님이 자녀의 휴대전화 메시지를 확인해도 될까?',
+  '초등학생도 SNS 계정을 자유롭게 만들 수 있어야 할까?',
+  '선생님이 학생의 일기를 검사해도 될까?',
+  '교실 안에 CCTV를 설치해야 할까?',
+  '시험 점수를 친구들 앞에서 공개해도 될까?',
+  '학교에 상점·벌점 제도가 꼭 필요할까?',
+  '숙제를 없애야 할까?',
+  '급식에서 먹기 싫은 음식은 남겨도 될까?',
+  '학원을 다닐지 말지는 학생이 스스로 정해야 할까?',
+  '게임하는 시간을 부모님이 정해도 될까?',
+  '용돈은 초등학생이 스스로 관리하게 해야 할까?',
+  '초등학생끼리만 영화관이나 놀이공원에 가도 될까?',
+  '전교 학생회 선거에 1~3학년도 투표하게 해야 할까?'
+];
 let config = {topic:'', notice:'', groups:DEFAULT_GROUPS};
 let configES = null;
 function startConfig(){
   if(configES) return;
   configES = subscribe('config', d=>{ config = Object.assign({topic:'',notice:'',groups:DEFAULT_GROUPS}, d||{}); applyConfig(); });
 }
+function topicFor(g){ return (g && config.groupTopics && config.groupTopics['g'+g]) || config.topic || ''; }
 function applyConfig(){
-  document.querySelectorAll('.voiceTopic,.chatTopic').forEach(el=>{ el.classList.toggle('hidden',!config.topic); el.querySelector('span').textContent=config.topic; });
+  [['.voiceTopic',voiceGroup],['.chatTopic',chatGroup]].forEach(([sel,g])=>{ const t=topicFor(g); document.querySelectorAll(sel).forEach(el=>{ el.classList.toggle('hidden',!t); el.querySelector('span').textContent=t; }); });
   document.querySelectorAll('.voiceNotice,.chatNotice').forEach(el=>{ el.classList.toggle('hidden',!config.notice); el.textContent='📢 '+config.notice; });
   renderGroupGrids();
-  if(!$('admin').classList.contains('hidden')) fillAdminConfig();
+  if(!$('admin').classList.contains('hidden')){ fillAdminConfig(); renderAdmin(); }
 }
 let voiceGroupSel=null, chatGroupSel=null;
 function renderGroupGrids(){
@@ -372,7 +431,7 @@ function enterVoice(){
   voiceGroup=voiceGroupSel;
   $('voiceTitle').textContent=`🎤 ${voiceGroup}모둠 · 말로만 모둠회의`;
   $('voiceSetup').classList.add('hidden'); $('voiceRoom').classList.remove('hidden');
-  timerAcc=0; updateTimer(); setRecUI(false);
+  timerAcc=0; updateTimer(); setRecUI(false); applyConfig();
   voiceES = subscribe(`voice/g${voiceGroup}`, d=>{ voiceItems=sorted(d); renderVoice(); }, $('voiceConn'));
   renderVoice();
 }
@@ -459,7 +518,7 @@ function downloadText(filename, text){
 }
 function downloadVoice(){
   if(!voiceItems.length){ toast('저장할 기록이 아직 없어요.'); return; }
-  const head=`[${voiceGroup}모둠 말로 한 모둠회의]${config.topic?'\n주제: '+config.topic:''}\n\n`;
+  const head=`[${voiceGroup}모둠 말로 한 모둠회의]${topicFor(voiceGroup)?'\n주제: '+topicFor(voiceGroup):''}\n찬성: 1·3·5번 / 반대: 2·4·6번\n\n`;
   downloadText(`${voiceGroup}모둠_말회의.txt`, head+voiceItems.map((it,i)=>`${i+1}. (${fmtTime(it.t)}) ${it.text}`).join('\n'));
 }
 
@@ -485,23 +544,30 @@ function filterBad(text){
 }
 
 /* ================= 활동 2: 글로만 모둠회의 ================= */
-let chatES=null, chatItems=[], chatGroup=null, myName='';
+let chatES=null, chatItems=[], chatGroup=null, myName='', myNum=0, numSel=0;
+const sideOf = n => !n ? null : (n%2===1 ? 'pro' : 'con');
+const sideLabel = n => !n ? '' : (n%2===1 ? '찬성' : '반대');
+function renderNumGrid(){
+  $('numGrid').innerHTML=[1,2,3,4,5,6].map(n=>`<button class="num-btn ${sideOf(n)} ${numSel===n?'sel':''}" onclick="pickNum(${n})">${n}번<small>${sideLabel(n)}</small></button>`).join('');
+}
+function pickNum(n){ numSel=n; LS.set('sc_num',n); renderNumGrid(); checkChatReady(); }
 function openChatSetup(){
   startConfig(); show('chat'); $('chatSetup').classList.remove('hidden'); $('chatRoom').classList.add('hidden');
   $('chatName').value = LS.get('sc_name','');
+  numSel=+LS.get('sc_num',0)||0; renderNumGrid();
   const g=+LS.get('sc_group',0); if(g) chatGroupSel=g;
   renderGroupGrids(); checkChatReady();
 }
-function checkChatReady(){ $('chatGo').disabled = !(chatGroupSel && $('chatName').value.trim()); }
+function checkChatReady(){ $('chatGo').disabled = !(chatGroupSel && numSel && $('chatName').value.trim()); }
 function enterChat(){
   const nm=filterBad($('chatName').value.trim());
   if(nm.hit){ toast('이름에 바르지 않은 말이 있어요. 내 이름을 써 주세요.'); return; }
-  myName=nm.text; chatGroup=chatGroupSel; LS.set('sc_name',myName);
-  $('chatTitle').textContent=`💬 ${chatGroup}모둠 소통방`;
+  myName=nm.text; myNum=numSel; chatGroup=chatGroupSel; LS.set('sc_name',myName);
+  $('chatTitle').innerHTML=`💬 ${chatGroup}모둠 소통방 <span class="mySide tag ${sideOf(myNum)}">나는 ${myNum}번 · ${sideLabel(myNum)}</span>`;
   $('chatSetup').classList.add('hidden'); $('chatRoom').classList.remove('hidden');
-  chatItems=[]; renderChat();
+  chatItems=[]; renderChat(); applyConfig();
   chatES = subscribe(`chat/g${chatGroup}`, d=>{ chatItems=sorted(d); renderChat(); }, $('chatConn'));
-  dbPush(`chat/g${chatGroup}`, {sys:true, text:`${myName} 님이 들어왔어요`, t:{'.sv':'timestamp'}}).catch(()=>{});
+  dbPush(`chat/g${chatGroup}`, {sys:true, text:`${myNum}번 ${myName} 님(${sideLabel(myNum)})이 들어왔어요`, t:{'.sv':'timestamp'}}).catch(()=>{});
   setTimeout(()=>$('chatInput').focus(),300);
 }
 function leaveChat(){ if(chatES){chatES.close(); chatES=null;} $('chatRoom').classList.add('hidden'); $('chatSetup').classList.remove('hidden'); }
@@ -512,7 +578,7 @@ function renderChat(){
   box.innerHTML = chatItems.map(m=>{
     if(m.sys) return `<div class="msg sys"><div class="bub">${esc(m.text)}</div></div>`;
     const me = m.cid===clientId;
-    return `<div class="msg ${me?'me':''}"><div class="who">${esc(m.name)}</div><div class="bub">${esc(filterBad(m.text).text)}</div><div class="tm">${fmtTime(m.t)}</div></div>`;
+    return `<div class="msg ${me?'me':''}"><div class="who">${m.num?m.num+'번 ':''}${esc(m.name)}${m.num?`<span class="tag ${sideOf(m.num)}">${sideLabel(m.num)}</span>`:''}</div><div class="bub">${esc(filterBad(m.text).text)}</div><div class="tm">${fmtTime(m.t)}</div></div>`;
   }).join('');
   if(atBottom) box.scrollTop=box.scrollHeight;
 }
@@ -522,7 +588,7 @@ function sendChat(){
   const f=filterBad(raw.slice(0,500));
   if(f.hit) toast('🙂 고운 말을 써요. 바르지 않은 말은 가려졌어요.',3000);
   sending=true; ta.value=''; autoGrow();
-  const msg={name:myName, cid:clientId, text:f.text, t:{'.sv':'timestamp'}};
+  const msg={name:myName, num:myNum, cid:clientId, text:f.text, t:{'.sv':'timestamp'}};
   if(f.hit){ msg.bad=true; msg.orig=raw.slice(0,500); }
   dbPush(`chat/g${chatGroup}`, msg)
     .then(()=>{ const b=$('msgs'); b.scrollTop=b.scrollHeight; })
@@ -553,12 +619,35 @@ function setAdminView(v){
 function fillAdminConfig(){
   if(document.activeElement!==$('cfgTopic')) $('cfgTopic').value=config.topic||'';
   if(document.activeElement!==$('cfgNotice')) $('cfgNotice').value=config.notice||'';
+  if(document.activeElement!==$('cfgBank')) $('cfgBank').value=getBank().join('\n');
   $('cfgGroups').innerHTML=Array.from({length:12},(_,i)=>`<option value="${i+1}" ${(+config.groups)===i+1?'selected':''}>${i+1}개 모둠</option>`).join('');
 }
 function saveConfig(){
-  dbSet('config',{topic:$('cfgTopic').value.trim(), notice:$('cfgNotice').value.trim(), groups:+$('cfgGroups').value})
+  dbPatch('config',{topic:$('cfgTopic').value.trim(), notice:$('cfgNotice').value.trim(), groups:+$('cfgGroups').value})
     .then(()=>toast('저장했어요! 학생 화면에 바로 보여요.')).catch(()=>toast('저장 실패. 데이터베이스 규칙을 확인해 주세요.'));
 }
+function getBank(){ const b=config.topicBank; return (Array.isArray(b)&&b.length)? b : DEFAULT_TOPICS; }
+function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function assignTopics(){
+  const n=+config.groups||DEFAULT_GROUPS, gt={};
+  let pool=[];
+  for(let g=1; g<=n; g++){ if(!pool.length) pool=shuffle(getBank()); gt['g'+g]=pool.pop(); }
+  dbPatch('config',{groupTopics:gt}).then(()=>toast('🎲 모둠별 주제를 배정했어요! 학생 화면에 바로 떠요.')).catch(()=>toast('배정 실패. 연결을 확인해 주세요.'));
+}
+function rerollTopic(g){
+  const used=new Set(Object.values(config.groupTopics||{}));
+  const cand=getBank().filter(t=>!used.has(t));
+  const list=cand.length?cand:getBank();
+  const t=list[Math.floor(Math.random()*list.length)];
+  dbPatch('config/groupTopics',{['g'+g]:t}).then(()=>toast(`${g}모둠 주제를 바꿨어요.`)).catch(()=>toast('바꾸기 실패'));
+}
+function clearTopics(){ if(!confirm('모둠별 주제 배정을 취소할까요?')) return; dbDel('config/groupTopics').then(()=>toast('배정을 취소했어요.')); }
+function saveBank(){
+  const list=$('cfgBank').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!list.length){ toast('주제를 한 개 이상 써 주세요.'); return; }
+  dbPatch('config',{topicBank:list}).then(()=>toast(`주제 ${list.length}개를 저장했어요.`)).catch(()=>toast('저장 실패'));
+}
+function resetBank(){ $('cfgBank').value=DEFAULT_TOPICS.join('\n'); dbDel('config/topicBank').then(()=>toast('기본 목록으로 되돌렸어요.')); }
 function clearAll(){
   if(!confirm('모든 모둠의 말 기록과 채팅 기록을 지울까요? 되돌릴 수 없어요.')) return;
   Promise.all([dbDel('voice'),dbDel('chat'),dbDel('status')]).then(()=>toast('모두 지웠어요.')).catch(()=>toast('지우기 실패'));
@@ -577,7 +666,7 @@ function voiceCol(g, cls){
 }
 function chatCol(g, cls){
   const c=sorted(adminData.chat?.['g'+g]).filter(m=>!m.sys);
-  const h = c.length ? c.map(m=>`<p><span class="nm">${esc(m.name)}</span> ${esc(filterBad(m.text).text)}${m.bad?`<span class="bad" title="원래 쓴 말: ${esc(m.orig||'')}">🚫 ${esc(m.orig||'')}</span>`:''}</p>`).join('') : '<p style="color:#999">아직 없음</p>';
+  const h = c.length ? c.map(m=>`<p><span class="nm">${m.num?m.num+'번 ':''}${esc(m.name)}</span>${m.num?`<span class="tag ${sideOf(m.num)}">${sideLabel(m.num)}</span>`:''} ${esc(filterBad(m.text).text)}${m.bad?`<span class="bad" title="원래 쓴 말: ${esc(m.orig||'')}">🚫 ${esc(m.orig||'')}</span>`:''}</p>`).join('') : '<p style="color:#999">아직 없음</p>';
   const badN = c.filter(m=>m.bad).length;
   return `<div class="col c ${cls||''}" data-k="c${g}"><h4>💬 글로 한 회의 (${c.length})${badN?` · 🚫 ${badN}`:''}</h4>${h}</div>`;
 }
@@ -593,18 +682,20 @@ function renderAdmin(reset){
     if(adminView==='voice'){ body=voiceCol(g,'one'); btns=`${badge}<button class="mini" onclick="clearGroup(${g},'voice')">🗑 지우기</button>`; }
     else if(adminView==='chat'){ body=chatCol(g,'one'); btns=`<button class="mini" onclick="clearGroup(${g},'chat')">🗑 지우기</button>`; }
     else { body=`<div class="cols">${voiceCol(g)}${chatCol(g)}</div>`; btns=`<button class="mini" onclick="openBig(${g})">🔍 크게 보기</button><button class="mini" onclick="downloadGroup(${g})">💾 저장</button>`; }
-    return `<div class="gcard"><div class="gh"><b>${g}모둠</b>${btns}</div>${body}</div>`;
+    const tp=topicFor(g);
+    const tline=`<div class="gtopic"><span>🗣️ ${tp?esc(tp):'<span style="color:#aaa">주제 없음</span>'}</span><button class="mini" onclick="rerollTopic(${g})" title="이 모둠 주제만 다시 뽑기">🎲</button></div>`;
+    return `<div class="gcard"><div class="gh"><b>${g}모둠</b>${btns}</div>${tline}${body}</div>`;
   }).join('');
   document.querySelectorAll('#adminGroups .col').forEach(c=>{ const k=keep[c.dataset.k]; c.scrollTop = (!k || k.bottom) ? c.scrollHeight : k.top; });
   if(bigGroup) $('bigCols').innerHTML=voiceCol(bigGroup)+chatCol(bigGroup);
 }
 setInterval(()=>{ if(adminES) renderAdmin(); }, 5000); // 녹음 상태 표시 갱신
-function openBig(g){ bigGroup=g; $('bigTitle').textContent=`${g}모둠 회의 기록 비교`; $('bigCols').innerHTML=voiceCol(g)+chatCol(g); $('bigModal').classList.remove('hidden'); }
+function openBig(g){ bigGroup=g; $('bigTitle').textContent=`${g}모둠 · ${topicFor(g)||'회의 기록 비교'}`; $('bigCols').innerHTML=voiceCol(g)+chatCol(g); $('bigModal').classList.remove('hidden'); }
 function closeBig(){ bigGroup=null; $('bigModal').classList.add('hidden'); }
 function downloadGroup(g){
   const v=sorted(adminData.voice?.['g'+g]), c=sorted(adminData.chat?.['g'+g]).filter(m=>!m.sys);
-  const txt=`[${g}모둠 회의 기록]${config.topic?'\n주제: '+config.topic:''}\n\n■ 말로 한 회의\n`+v.map((it,i)=>`${i+1}. (${fmtTime(it.t)}) ${it.text}`).join('\n')+
-    `\n\n■ 글로 한 회의\n`+c.map(m=>`(${fmtTime(m.t)}) ${m.name}: ${m.text}`).join('\n');
+  const txt=`[${g}모둠 회의 기록]${topicFor(g)?'\n주제: '+topicFor(g):''}\n\n■ 말로 한 회의\n`+v.map((it,i)=>`${i+1}. (${fmtTime(it.t)}) ${it.text}`).join('\n')+
+    `\n\n■ 글로 한 회의\n`+c.map(m=>`(${fmtTime(m.t)}) ${m.num?m.num+'번 ':''}${m.name}${m.num?'('+sideLabel(m.num)+')':''}: ${m.text}`).join('\n');
   downloadText(`${g}모둠_회의기록.txt`, txt);
 }
 
